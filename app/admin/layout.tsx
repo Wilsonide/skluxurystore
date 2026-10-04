@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import {
   Boxes,
   CreditCard,
@@ -61,45 +61,39 @@ export default function AdminLayout({
   const router = useRouter();
 
   const user = useAuthStore((state) => state.user);
+  const hydrated = useAuthStore((state) => state.hydrated);
   const logout = useAuthStore((state) => state.logout);
 
-  const hydrated = useSyncExternalStore(
-    (onStoreChange) => {
-      const persist = useAuthStore.persist;
-      return persist ? persist.onFinishHydration(onStoreChange) : () => {};
-    },
-    () => useAuthStore.persist?.hasHydrated() ?? true,
-    () => false,
-  );
+  /**
 
-  /*
-   * ============================================================
-   * AUTHORIZATION GUARD
-   * ============================================================
-   */
-
+* ============================================================
+* AUTHORIZATION GUARD
+* ============================================================
+  */
   useEffect(() => {
     if (!hydrated) {
       return;
     }
 
-    /*
-     * User is not authenticated.
-     */
+    /**
+
+
+
+ * User is not authenticated.
+ */
     if (!user) {
       router.replace(`/auth/login?from=${encodeURIComponent(pathname)}`);
-
       return;
     }
 
-    /*
+    /**
      * Check admin role.
      */
     const role = user.role?.toUpperCase();
 
     const isAdmin = ADMIN_ROLES.includes(role);
 
-    /*
+    /**
      * Authenticated but not an admin.
      */
     if (!isAdmin) {
@@ -107,12 +101,12 @@ export default function AdminLayout({
     }
   }, [hydrated, user, pathname, router]);
 
-  /*
-   * ============================================================
-   * WAITING FOR AUTH STATE
-   * ============================================================
-   */
+  /**
 
+* ============================================================
+* WAITING FOR AUTH STATE
+* ============================================================
+  */
   if (!hydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
@@ -133,12 +127,12 @@ export default function AdminLayout({
     );
   }
 
-  /*
-   * ============================================================
-   * NOT AUTHENTICATED
-   * ============================================================
-   */
+  /**
 
+* ============================================================
+* NOT AUTHENTICATED
+* ============================================================
+  */
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
@@ -155,12 +149,12 @@ export default function AdminLayout({
     );
   }
 
-  /*
-   * ============================================================
-   * ADMIN AUTHORIZATION
-   * ============================================================
-   */
+  /**
 
+* ============================================================
+* ADMIN AUTHORIZATION
+* ============================================================
+  */
   const role = user.role?.toUpperCase();
 
   const isAdmin = ADMIN_ROLES.includes(role);
@@ -168,19 +162,19 @@ export default function AdminLayout({
   if (!isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
+        {" "}
         <div className="max-w-md text-center">
+          {" "}
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand-border bg-brand-cream">
-            <Store className="h-6 w-6 text-brand-champagne" />
+            {" "}
+            <Store className="h-6 w-6 text-brand-champagne" />{" "}
           </div>
-
           <h1 className="mt-6 text-xl font-semibold text-brand-obsidian">
             Access denied
           </h1>
-
           <p className="mt-2 text-sm leading-6 text-brand-muted">
             You do not have permission to access the administration area.
           </p>
-
           <Link
             href="/shop"
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-obsidian px-5 py-3 text-sm font-semibold text-brand-gold-light transition hover:bg-brand-espresso"
@@ -193,12 +187,12 @@ export default function AdminLayout({
     );
   }
 
-  /*
-   * ============================================================
-   * LOGOUT
-   * ============================================================
-   */
+  /**
 
+* ============================================================
+* LOGOUT
+* ============================================================
+  */
   const handleLogout = async () => {
     try {
       await AuthService.logout();
@@ -206,17 +200,16 @@ export default function AdminLayout({
       console.error("Logout failed:", error);
     } finally {
       logout();
-
       window.location.href = "/";
     }
   };
 
-  /*
-   * ============================================================
-   * ADMIN UI
-   * ============================================================
-   */
+  /**
 
+* ============================================================
+* ADMIN UI
+* ============================================================
+  */
   return (
     <div className="min-h-screen bg-brand-ivory">
       <div className="flex min-h-screen">
@@ -251,12 +244,11 @@ export default function AdminLayout({
                   href={item.href}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                     active
-                      ? "bg-brand-obsidian text-brand-gold-light"
+                      ? "bg-brand-obsidian text-brand-gold-light shadow-sm"
                       : "text-brand-muted-dark hover:bg-brand-cream hover:text-brand-obsidian"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-
                   <span>{item.name}</span>
                 </Link>
               );
@@ -271,7 +263,6 @@ export default function AdminLayout({
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-muted-dark transition hover:bg-brand-cream hover:text-brand-obsidian"
             >
               <Store className="h-4 w-4" />
-
               <span>Visit Store</span>
             </Link>
 
@@ -282,7 +273,6 @@ export default function AdminLayout({
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-muted-dark transition hover:bg-red-50 hover:text-red-600"
             >
               <LogOut className="h-4 w-4" />
-
               <span>Logout</span>
             </button>
           </div>

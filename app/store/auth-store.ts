@@ -1,21 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
 import type { User } from "@/app/services/auth.service";
 
 interface AuthStore {
   user: User | null;
   accessToken: string | null;
-
   isLoading: boolean;
   hydrated: boolean;
 
   setUser: (user: User | null) => void;
   setAccessToken: (token: string | null) => void;
-
   startLoading: () => void;
   finishLoading: () => void;
-
   logout: () => void;
 }
 
@@ -24,7 +20,6 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       accessToken: null,
-
       isLoading: true,
       hydrated: false,
 
@@ -57,8 +52,22 @@ export const useAuthStore = create<AuthStore>()(
           hydrated: true,
         }),
     }),
+
     {
       name: "ecommerce-auth",
+
+      onRehydrateStorage: () => {
+        return (_state, error) => {
+          if (error) {
+            console.error("Failed to rehydrate authentication state:", error);
+          }
+
+          useAuthStore.setState({
+            hydrated: true,
+            isLoading: false,
+          });
+        };
+      },
     },
   ),
 );
