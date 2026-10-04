@@ -1,22 +1,32 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, CheckCircle2, Loader2, ShoppingBag } from "lucide-react";
+import PaystackPop from "@paystack/inline-js";
 
 import { useCartStore } from "@/app/store/cart-store";
 import { useAuthStore } from "@/app/store/auth-store";
 import { OrderService } from "@/app/services/order.service";
 import { PaymentService } from "@/app/services/payment.service";
+import type { PaymentInitializeResponse } from "@/app/services/payment.service";
 
 const CHECKOUT_DRAFT_KEY = "checkout_draft";
+const PENDING_PAYMENT_KEY = "pending_checkout_payment";
 
 interface CheckoutDraft {
   shippingAddress: string;
   phoneNumber: string;
+}
+
+interface PendingCheckoutPayment {
+  orderId: number;
+  payment: PaymentInitializeResponse;
+  shippingAddress: string;
+  phoneNumber: string;
+  cartFingerprint: string;
+  createdAt: string;
 }
 
 export default function CheckoutPage() {
@@ -48,7 +58,9 @@ export default function CheckoutPage() {
       return draft;
     } catch (error) {
       console.error("Failed to restore checkout data:", error);
+
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+
       return null;
     }
   });
@@ -60,6 +72,83 @@ export default function CheckoutPage() {
   const [phoneNumber, setPhoneNumber] = useState(
     checkoutDraft?.phoneNumber ?? "",
   );
+
+  // ============================================================
+  // CART FINGERPRINT
+  // ============================================================
+  //
+  // This identifies the exact cart that was used to create the
+  // pending order.
+  //
+  // If the customer changes the cart after creating an order,
+  // we do NOT resume the old payment against the new cart.
+  //
+  // ============================================================
+
+  const createCartFingerprint = () => {
+    return JSON.stringify(
+      items
+        .map((item) => ({
+          variant_id: item.variant_id,
+          quantity: item.quantity,
+        }))
+        .sort((a, b) => a.variant_id - b.variant_id),
+    );
+  };
+
+  const currentCartFingerprint = createCartFingerprint();
+
+  // ============================================================
+  // RESTORE PENDING PAYMENT
+  // ============================================================
+
+  const [pendingPayment, setPendingPayment] =
+    useState<PendingCheckoutPayment | null>(() => {
+      if (typeof window === "undefined") {
+        return null;
+      }
+
+      try {
+        const savedPayment = sessionStorage.getItem(PENDING_PAYMENT_KEY);
+
+        if (!savedPayment) {
+          return null;
+        }
+
+        const parsed: PendingCheckoutPayment = JSON.parse(savedPayment);
+
+        // ------------------------------------------------------
+        // Validate basic structure
+        // ------------------------------------------------------
+
+        if (
+          !parsed.orderId ||
+          !parsed.payment?.access_code ||
+          !parsed.payment?.reference
+        ) {
+          sessionStorage.removeItem(PENDING_PAYMENT_KEY);
+          return null;
+        }
+
+        // ------------------------------------------------------
+        // Make sure the pending payment belongs to the current
+        // cart.
+        // ------------------------------------------------------
+
+        if (parsed.cartFingerprint !== currentCartFingerprint) {
+          sessionStorage.removeItem(PENDING_PAYMENT_KEY);
+          return null;
+        }
+
+        return parsed;
+      } catch (error) {
+        console.error("Failed to restore pending payment:", error);
+
+        sessionStorage.removeItem(PENDING_PAYMENT_KEY);
+
+        return null;
+      }
+    });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,11 +176,144 @@ export default function CheckoutPage() {
   };
 
   // ============================================================
-  // PLACE ORDER + INITIALIZE PAYMENT
+  // SAVE PENDING PAYMENT
+  // ============================================================
+
+  const savePendingPayment = (
+    orderId: number,
+    payment: PaymentInitializeResponse,
+    address: string,
+    phone: string,
+  ) => {
+    const pending: PendingCheckoutPayment = {
+      orderId,
+      payment,
+      shippingAddress: address,
+      phoneNumber: phone,
+      cartFingerprint: currentCartFingerprint,
+      createdAt: new Date().toISOString(),
+    };
+
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify(pending));
+
+    setPendingPayment(pending);
+  };
+
+  // ============================================================
+  // CLEAR PENDING PAYMENT
+  // ============================================================
+
+  const clearPendingPayment = () => {
+    sessionStorage.removeItem(PENDING_PAYMENT_KEY);
+    setPendingPayment(null);
+  };
+
+  // ============================================================
+  // ERROR MESSAGE
+  // ============================================================
+
+  const getErrorMessage = (error: unknown) => {
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const response = (
+        error as {
+          response?: {
+            data?: {
+              detail?: string;
+              message?: string;
+            };
+          };
+        }
+      ).response;
+
+      return (
+        response?.data?.detail ??
+        response?.data?.message ??
+        "Unable to process your payment. Please try again."
+      );
+    }
+
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return "Unable to process your payment. Please try again.";
+  };
+
+  // ============================================================
+  // OPEN PAYSTACK
+  // ============================================================
+
+  const openPaystackPayment = (payment: PaymentInitializeResponse) => {
+    if (!payment.access_code) {
+      setLoading(false);
+
+      setError("Payment could not be opened. Please try again.");
+
+      return;
+    }
+
+    const paystack = new PaystackPop();
+
+    paystack.resumeTransaction(payment.access_code, {
+      // --------------------------------------------------------
+      // SUCCESS
+      // --------------------------------------------------------
+
+      onSuccess: (transaction) => {
+        setLoading(true);
+        setError(null);
+
+        const reference = transaction.reference || payment.reference;
+
+        // ------------------------------------------------------
+        // Do not clear the pending payment here.
+        //
+        // The success page is responsible for server-side
+        // verification. It can clear the cart only after the
+        // backend confirms that the payment succeeded.
+        // ------------------------------------------------------
+
+        router.push(
+          `/payment/success?reference=${encodeURIComponent(reference)}`,
+        );
+      },
+
+      // --------------------------------------------------------
+      // CANCELLED / CLOSED
+      // --------------------------------------------------------
+
+      onCancel: () => {
+        setLoading(false);
+
+        setError(
+          "Payment was cancelled. Your order has not been charged. You can try again when you're ready.",
+        );
+      },
+
+      // --------------------------------------------------------
+      // PAYSTACK ERROR
+      // --------------------------------------------------------
+
+      onError: (paystackError) => {
+        console.error("Paystack error:", paystackError);
+
+        setLoading(false);
+
+        setError(
+          paystackError?.message ??
+            "We couldn't open the payment window. Please try again.",
+        );
+      },
+    });
+  };
+
+  // ============================================================
+  // PLACE ORDER + INITIALIZE / RESUME PAYMENT
   // ============================================================
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     setError(null);
 
     // ----------------------------------------------------------
@@ -125,7 +347,7 @@ export default function CheckoutPage() {
     }
 
     // ----------------------------------------------------------
-    // PHONE NUMBER VALIDATION
+    // PHONE VALIDATION
     // ----------------------------------------------------------
 
     if (phone.length < 7) {
@@ -139,7 +361,7 @@ export default function CheckoutPage() {
     }
 
     // ----------------------------------------------------------
-    // AUTHENTICATION CHECK
+    // AUTHENTICATION
     // ----------------------------------------------------------
 
     if (!user) {
@@ -151,11 +373,51 @@ export default function CheckoutPage() {
     }
 
     // ----------------------------------------------------------
-    // CREATE ORDER
+    // PREVENT DOUBLE SUBMISSION
     // ----------------------------------------------------------
+
+    if (loading) {
+      return;
+    }
 
     try {
       setLoading(true);
+
+      // ========================================================
+      // RESUME EXISTING PENDING PAYMENT
+      // ========================================================
+
+      if (pendingPayment) {
+        // ------------------------------------------------------
+        // Make sure the address/phone still belong to the
+        // pending order.
+        // ------------------------------------------------------
+
+        if (
+          pendingPayment.shippingAddress !== address ||
+          pendingPayment.phoneNumber !== phone
+        ) {
+          setLoading(false);
+
+          setError(
+            "Your delivery information has changed since this payment was created. Please review your order before continuing.",
+          );
+
+          return;
+        }
+
+        // ------------------------------------------------------
+        // Resume the exact same Paystack transaction.
+        // ------------------------------------------------------
+
+        openPaystackPayment(pendingPayment.payment);
+
+        return;
+      }
+
+      // ========================================================
+      // CREATE ORDER
+      // ========================================================
 
       const order = await OrderService.create({
         shipping_address: address,
@@ -166,33 +428,39 @@ export default function CheckoutPage() {
         })),
       });
 
-      // --------------------------------------------------------
+      // ========================================================
       // INITIALIZE PAYMENT
-      //
-      // The order has been created, but the customer has NOT
-      // paid yet.
-      //
-      // Do not clear the cart here.
-      // --------------------------------------------------------
+      // ========================================================
 
       const payment = await PaymentService.initialize(order.id);
 
-      // --------------------------------------------------------
-      // REDIRECT TO PAYSTACK
-      // --------------------------------------------------------
-
-      if (!payment.authorization_url) {
+      if (!payment.access_code) {
         throw new Error("Payment could not be initialized. Please try again.");
       }
 
-      window.location.href = payment.authorization_url;
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.detail ??
-          error?.response?.data?.message ??
-          error?.message ??
-          "Unable to process your order. Please try again.",
-      );
+      // ========================================================
+      // PERSIST PENDING PAYMENT
+      // ========================================================
+      //
+      // This survives a page refresh within the same browser
+      // session.
+      //
+      // It contains enough information to resume the exact
+      // transaction without creating another order.
+      //
+      // ========================================================
+
+      savePendingPayment(order.id, payment, address, phone);
+
+      // ========================================================
+      // OPEN PAYSTACK
+      // ========================================================
+
+      openPaystackPayment(payment);
+    } catch (error: unknown) {
+      console.error("Checkout error:", error);
+
+      setError(getErrorMessage(error));
 
       setLoading(false);
     }
@@ -266,9 +534,9 @@ export default function CheckoutPage() {
           onSubmit={handleSubmit}
           className="grid gap-10 lg:grid-cols-[1fr_380px]"
         >
-          {/* ====================================================
+          {/* ==================================================
               LEFT
-          ==================================================== */}
+          ================================================== */}
 
           <div className="space-y-8">
             {/* DELIVERY */}
@@ -331,6 +599,7 @@ export default function CheckoutPage() {
 
                   <div className="mt-2 flex justify-between text-xs text-brand-muted">
                     <span>Minimum 5 characters</span>
+
                     <span>{shippingAddress.length}/500</span>
                   </div>
                 </div>
@@ -391,9 +660,9 @@ export default function CheckoutPage() {
             </section>
           </div>
 
-          {/* ====================================================
+          {/* ==================================================
               RIGHT
-          ==================================================== */}
+          ================================================== */}
 
           <aside className="h-fit rounded-2xl border border-brand-border bg-brand-warm-white p-6 shadow-sm lg:sticky lg:top-6">
             <h2 className="text-lg font-semibold text-brand-obsidian">
@@ -433,11 +702,26 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {/* PENDING PAYMENT NOTICE */}
+            {pendingPayment && (
+              <div className="mt-6 rounded-xl border border-brand-gold-light bg-brand-cream p-4">
+                <p className="text-sm font-semibold text-brand-espresso">
+                  Payment awaiting completion
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-brand-muted-dark">
+                  You already started payment for this order. You can continue
+                  the same payment without creating another order.
+                </p>
+              </div>
+            )}
+
             {/* ERROR */}
             {error && (
               <div
                 role="alert"
-                className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                aria-live="polite"
+                className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-5 text-red-700"
               >
                 {error}
               </div>
@@ -452,12 +736,17 @@ export default function CheckoutPage() {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {user ? "Preparing payment..." : "Redirecting to login..."}
+                  Opening secure payment...
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4" />
-                  {user ? "Proceed to Payment" : "Login to Checkout"}
+
+                  {pendingPayment
+                    ? "Continue to Payment"
+                    : user
+                      ? "Proceed to Payment"
+                      : "Login to Checkout"}
                 </>
               )}
             </button>
@@ -465,7 +754,9 @@ export default function CheckoutPage() {
             {/* PAYMENT MESSAGE */}
             <p className="mt-4 text-center text-xs leading-5 text-brand-muted">
               {user
-                ? "You will be redirected to our secure payment page to complete your purchase."
+                ? pendingPayment
+                  ? "Your previous payment session is available. You can continue securely with the same transaction."
+                  : "A secure Paystack payment window will open without leaving this checkout page."
                 : "You need to sign in before proceeding to payment."}
             </p>
           </aside>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@paystack/inline-js": "^2.26.0",
     "@reduxjs/toolkit": "^2.12.0",
     "@tanstack/react-query": "^5.100.10",
     "axios": "^1.16.1",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/paystack__inline-js": "^1.0.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

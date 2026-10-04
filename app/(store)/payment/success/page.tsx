@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
+
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 import { PaymentService } from "@/app/services/payment.service";
 import { useCartStore } from "@/app/store/cart-store";
 
 type PaymentState = "verifying" | "success" | "failed";
+
+const PENDING_PAYMENT_KEY = "pending_checkout_payment";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
@@ -16,7 +20,6 @@ export default function PaymentSuccessPage() {
   const clearCart = useCartStore((state) => state.clearCart);
 
   const [status, setStatus] = useState<PaymentState>("verifying");
-
   const [message, setMessage] = useState("Verifying your payment...");
 
   useEffect(() => {
@@ -34,7 +37,17 @@ export default function PaymentSuccessPage() {
 
         if (payment.status === "successful") {
           /**
-           * Payment has been confirmed by Paystack.
+           * Payment has been confirmed by the backend
+           * after Paystack verification.
+           *
+           * Only now should we remove the persisted
+           * pending checkout payment.
+           */
+          sessionStorage.removeItem(PENDING_PAYMENT_KEY);
+
+          /**
+           * The cart is cleared only after payment
+           * has been successfully confirmed.
            */
           clearCart();
 
@@ -53,13 +66,25 @@ export default function PaymentSuccessPage() {
           return;
         }
 
+        /**
+         * Do not remove the pending payment here.
+         *
+         * The customer may need to return to checkout
+         * and continue/retry the payment.
+         */
         setStatus("failed");
-        setMessage("Your payment was not successful.");
+        setMessage(
+          "Your payment was not successful. You can return to checkout and try again.",
+        );
       } catch (error) {
         console.error("Payment verification failed:", error);
 
+        /**
+         * Do not clear the pending payment when verification
+         * itself fails. The customer should retain the ability
+         * to return to checkout and continue the payment.
+         */
         setStatus("failed");
-
         setMessage(
           "We could not verify your payment. Please contact support if money was deducted.",
         );
