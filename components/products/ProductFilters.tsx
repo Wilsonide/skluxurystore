@@ -1,7 +1,6 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-
 import type { ProductQueryParams } from "@/app/types/product";
 
 interface FilterOption {
@@ -50,24 +49,34 @@ export default function ProductFilters({
   };
 
   return (
-    <aside className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5">
+    <aside className="space-y-6 rounded-2xl border border-brand-border bg-brand-warm-white p-5 shadow-sm">
+      {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-slate-900">Filters</h2>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-champagne">
+            Refine
+          </p>
+
+          <h2 className="mt-1 font-semibold text-brand-obsidian">Filters</h2>
+        </div>
 
         <button
           type="button"
           onClick={reset}
-          className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-600"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-muted transition-colors duration-200 hover:text-brand-obsidian"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Reset
         </button>
       </div>
 
-      {/* CATEGORY */}
+      <div className="h-px bg-brand-border" />
 
+      {/* CATEGORY */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">Category</label>
+        <label className="text-sm font-medium text-brand-muted-dark">
+          Category
+        </label>
 
         <select
           value={values.category_id ?? ""}
@@ -77,7 +86,7 @@ export default function ProductFilters({
               event.target.value ? Number(event.target.value) : undefined,
             )
           }
-          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+          className="h-10 w-full rounded-lg border border-brand-border bg-brand-ivory px-3 text-sm text-brand-obsidian outline-none transition-all duration-200 focus:border-brand-champagne focus:ring-2 focus:ring-brand-champagne/15"
         >
           <option value="">All categories</option>
 
@@ -90,9 +99,10 @@ export default function ProductFilters({
       </div>
 
       {/* BRAND */}
-
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">Brand</label>
+        <label className="text-sm font-medium text-brand-muted-dark">
+          Brand
+        </label>
 
         <select
           value={values.brand_id ?? ""}
@@ -102,7 +112,7 @@ export default function ProductFilters({
               event.target.value ? Number(event.target.value) : undefined,
             )
           }
-          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+          className="h-10 w-full rounded-lg border border-brand-border bg-brand-ivory px-3 text-sm text-brand-obsidian outline-none transition-all duration-200 focus:border-brand-champagne focus:ring-2 focus:ring-brand-champagne/15"
         >
           <option value="">All brands</option>
 
@@ -115,9 +125,8 @@ export default function ProductFilters({
       </div>
 
       {/* PRICE */}
-
       <div className="space-y-3">
-        <label className="text-sm font-medium text-slate-700">
+        <label className="text-sm font-medium text-brand-muted-dark">
           Price range
         </label>
 
@@ -133,7 +142,7 @@ export default function ProductFilters({
                 event.target.value ? Number(event.target.value) : undefined,
               )
             }
-            className="h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500"
+            className="h-10 rounded-lg border border-brand-border bg-brand-ivory px-3 text-sm text-brand-obsidian outline-none transition-all duration-200 placeholder:text-brand-muted focus:border-brand-champagne focus:ring-2 focus:ring-brand-champagne/15"
           />
 
           <input
@@ -147,26 +156,26 @@ export default function ProductFilters({
                 event.target.value ? Number(event.target.value) : undefined,
               )
             }
-            className="h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500"
+            className="h-10 rounded-lg border border-brand-border bg-brand-ivory px-3 text-sm text-brand-obsidian outline-none transition-all duration-200 placeholder:text-brand-muted focus:border-brand-champagne focus:ring-2 focus:ring-brand-champagne/15"
           />
         </div>
       </div>
 
-      {/* AVAILABILITY */}
+      <div className="h-px bg-brand-border" />
 
+      {/* AVAILABILITY */}
       <label className="flex cursor-pointer items-center gap-3">
         <input
           type="checkbox"
           checked={values.available ?? false}
           onChange={(event) => update("available", event.target.checked)}
-          className="h-4 w-4 rounded border-slate-300"
+          className="h-4 w-4 rounded border-brand-border-dark accent-brand-champagne"
         />
 
-        <span className="text-sm text-slate-700">In stock only</span>
+        <span className="text-sm text-brand-muted-dark">In stock only</span>
       </label>
 
       {/* FEATURED */}
-
       <label className="flex cursor-pointer items-center gap-3">
         <input
           type="checkbox"
@@ -174,34 +183,30 @@ export default function ProductFilters({
           onChange={(event) =>
             update("featured", event.target.checked ? true : undefined)
           }
-          className="h-4 w-4 rounded border-slate-300"
+          className="h-4 w-4 rounded border-brand-border-dark accent-brand-champagne"
         />
 
-        <span className="text-sm text-slate-700">Featured products</span>
+        <span className="text-sm text-brand-muted-dark">Featured products</span>
       </label>
 
       {/* SORT */}
-
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">Sort by</label>
+        <label className="text-sm font-medium text-brand-muted-dark">
+          Sort by
+        </label>
 
         <select
           value={values.sort ?? "newest"}
           onChange={(event) =>
             update("sort", event.target.value as ProductQueryParams["sort"])
           }
-          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+          className="h-10 w-full rounded-lg border border-brand-border bg-brand-ivory px-3 text-sm text-brand-obsidian outline-none transition-all duration-200 focus:border-brand-champagne focus:ring-2 focus:ring-brand-champagne/15"
         >
           <option value="newest">Newest</option>
-
           <option value="oldest">Oldest</option>
-
           <option value="price_asc">Price: Low to High</option>
-
           <option value="price_desc">Price: High to Low</option>
-
           <option value="name_asc">Name: A-Z</option>
-
           <option value="name_desc">Name: Z-A</option>
         </select>
       </div>

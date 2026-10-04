@@ -43,7 +43,6 @@ export default function CheckoutPage() {
 
       const draft: CheckoutDraft = JSON.parse(savedDraft);
 
-      // Remove the draft only after reading it successfully.
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
 
       return draft;
@@ -113,9 +112,6 @@ export default function CheckoutPage() {
 
     // ----------------------------------------------------------
     // SHIPPING ADDRESS VALIDATION
-    // Matches backend:
-    // min_length=5
-    // max_length=500
     // ----------------------------------------------------------
 
     if (address.length < 5) {
@@ -130,9 +126,6 @@ export default function CheckoutPage() {
 
     // ----------------------------------------------------------
     // PHONE NUMBER VALIDATION
-    // Matches backend:
-    // min_length=7
-    // max_length=20
     // ----------------------------------------------------------
 
     if (phone.length < 7) {
@@ -211,26 +204,28 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <main className="mx-auto flex min-h-[60vh] max-w-7xl items-center justify-center px-4 py-16">
-        <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-            <ShoppingBag className="h-7 w-7 text-slate-500" />
+      <main className="min-h-screen bg-brand-ivory">
+        <div className="mx-auto flex min-h-[60vh] max-w-7xl items-center justify-center px-4 py-16">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-brand-border bg-brand-cream">
+              <ShoppingBag className="h-7 w-7 text-brand-champagne" />
+            </div>
+
+            <h1 className="mt-6 text-2xl font-bold text-brand-obsidian">
+              Your cart is empty
+            </h1>
+
+            <p className="mt-2 text-sm text-brand-muted">
+              Add products to your cart before checking out.
+            </p>
+
+            <Link
+              href="/shop"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand-obsidian px-6 py-3 text-sm font-semibold text-brand-gold-light transition hover:bg-brand-espresso"
+            >
+              Continue Shopping
+            </Link>
           </div>
-
-          <h1 className="mt-6 text-2xl font-bold text-slate-950">
-            Your cart is empty
-          </h1>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Add products to your cart before checking out.
-          </p>
-
-          <Link
-            href="/shop"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-slate-950 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            Continue Shopping
-          </Link>
         </div>
       </main>
     );
@@ -241,237 +236,241 @@ export default function CheckoutPage() {
   // ============================================================
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      {/* BACK TO CART */}
+    <main className="min-h-screen bg-brand-ivory">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {/* Back to cart */}
+        <Link
+          href="/cart"
+          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-brand-muted transition hover:text-brand-obsidian"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to cart
+        </Link>
 
-      <Link
-        href="/cart"
-        className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to cart
-      </Link>
+        {/* Header */}
+        <div className="mb-10">
+          <p className="text-sm font-medium tracking-wide text-brand-champagne">
+            Secure Checkout
+          </p>
 
-      {/* HEADER */}
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-brand-obsidian">
+            Checkout
+          </h1>
 
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
-          Checkout
-        </h1>
+          <p className="mt-2 text-sm text-brand-muted">
+            Enter your delivery information to place your order.
+          </p>
+        </div>
 
-        <p className="mt-2 text-sm text-slate-500">
-          Enter your delivery information to place your order.
-        </p>
-      </div>
+        <form
+          onSubmit={handleSubmit}
+          className="grid gap-10 lg:grid-cols-[1fr_380px]"
+        >
+          {/* ====================================================
+              LEFT
+          ==================================================== */}
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid gap-10 lg:grid-cols-[1fr_380px]"
-      >
-        {/* ====================================================
-            LEFT
-        ==================================================== */}
+          <div className="space-y-8">
+            {/* DELIVERY */}
+            <section className="rounded-2xl border border-brand-border bg-brand-warm-white p-6">
+              <div className="border-b border-brand-border pb-5">
+                <h2 className="text-lg font-semibold text-brand-obsidian">
+                  Delivery Information
+                </h2>
 
-        <div className="space-y-8">
-          {/* DELIVERY */}
-
-          <section className="rounded-2xl border bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Delivery Information
-            </h2>
-
-            <div className="mt-6 space-y-5">
-              {/* PHONE */}
-
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Phone number
-                </label>
-
-                <input
-                  id="phone"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(event) => setPhoneNumber(event.target.value)}
-                  placeholder="08012345678"
-                  maxLength={20}
-                  disabled={loading}
-                  className="h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
-                />
-
-                <p className="mt-2 text-xs text-slate-400">
-                  Enter a valid phone number between 7 and 20 characters.
+                <p className="mt-1 text-sm text-brand-muted">
+                  Where should we deliver your order?
                 </p>
               </div>
 
-              {/* ADDRESS */}
+              <div className="mt-6 space-y-5">
+                {/* PHONE */}
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="mb-2 block text-sm font-medium text-brand-espresso"
+                  >
+                    Phone number
+                  </label>
 
-              <div>
-                <label
-                  htmlFor="address"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Shipping address
-                </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(event) => setPhoneNumber(event.target.value)}
+                    placeholder="08012345678"
+                    maxLength={20}
+                    disabled={loading}
+                    className="h-12 w-full rounded-xl border border-brand-border bg-brand-ivory px-4 text-sm text-brand-obsidian outline-none transition placeholder:text-brand-muted focus:border-brand-champagne focus:ring-2 focus:ring-brand-gold-soft disabled:bg-brand-cream"
+                  />
 
-                <textarea
-                  id="address"
-                  value={shippingAddress}
-                  onChange={(event) => setShippingAddress(event.target.value)}
-                  placeholder="Enter your complete delivery address"
-                  rows={5}
-                  maxLength={500}
-                  disabled={loading}
-                  className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
-                />
-
-                <div className="mt-2 flex justify-between text-xs text-slate-400">
-                  <span>Minimum 5 characters</span>
-                  <span>{shippingAddress.length}/500</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ORDER ITEMS */}
-
-          <section className="rounded-2xl border bg-white p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-950">
-                Your Items
-              </h2>
-
-              <Link
-                href="/cart"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Edit cart
-              </Link>
-            </div>
-
-            <div className="mt-6 divide-y">
-              {items.map((item) => (
-                <div
-                  key={item.variant_id}
-                  className="flex items-center justify-between gap-4 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900">
-                      {item.product_name}
-                    </p>
-
-                    {(item.color || item.size) && (
-                      <p className="mt-1 text-sm text-slate-500">
-                        {item.color && `Color: ${item.color}`}
-
-                        {item.color && item.size && " • "}
-
-                        {item.size && `Size: ${item.size}`}
-                      </p>
-                    )}
-
-                    <p className="mt-1 text-xs text-slate-400">
-                      Qty: {item.quantity}
-                    </p>
-                  </div>
-
-                  <p className="shrink-0 font-semibold text-slate-900">
-                    ₦{(Number(item.price) * item.quantity).toLocaleString()}
+                  <p className="mt-2 text-xs text-brand-muted">
+                    Enter a valid phone number between 7 and 20 characters.
                   </p>
                 </div>
-              ))}
-            </div>
-          </section>
-        </div>
 
-        {/* ====================================================
-            RIGHT
-        ==================================================== */}
+                {/* ADDRESS */}
+                <div>
+                  <label
+                    htmlFor="address"
+                    className="mb-2 block text-sm font-medium text-brand-espresso"
+                  >
+                    Shipping address
+                  </label>
 
-        <aside className="h-fit rounded-2xl border bg-white p-6 lg:sticky lg:top-6">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Order Summary
-          </h2>
+                  <textarea
+                    id="address"
+                    value={shippingAddress}
+                    onChange={(event) => setShippingAddress(event.target.value)}
+                    placeholder="Enter your complete delivery address"
+                    rows={5}
+                    maxLength={500}
+                    disabled={loading}
+                    className="w-full resize-none rounded-xl border border-brand-border bg-brand-ivory px-4 py-3 text-sm text-brand-obsidian outline-none transition placeholder:text-brand-muted focus:border-brand-champagne focus:ring-2 focus:ring-brand-gold-soft disabled:bg-brand-cream"
+                  />
 
-          <div className="mt-6 space-y-4">
-            {/* SUBTOTAL */}
+                  <div className="mt-2 flex justify-between text-xs text-brand-muted">
+                    <span>Minimum 5 characters</span>
+                    <span>{shippingAddress.length}/500</span>
+                  </div>
+                </div>
+              </div>
+            </section>
 
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Subtotal</span>
+            {/* ORDER ITEMS */}
+            <section className="rounded-2xl border border-brand-border bg-brand-warm-white p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-brand-obsidian">
+                    Your Items
+                  </h2>
 
-              <span className="font-medium text-slate-900">
-                ₦{subtotal.toLocaleString()}
-              </span>
-            </div>
+                  <p className="mt-1 text-sm text-brand-muted">
+                    Review your selection before payment.
+                  </p>
+                </div>
 
-            {/* DELIVERY */}
+                <Link
+                  href="/cart"
+                  className="text-sm font-medium text-brand-champagne transition hover:text-brand-espresso"
+                >
+                  Edit cart
+                </Link>
+              </div>
 
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Delivery</span>
+              <div className="mt-6 divide-y divide-brand-border">
+                {items.map((item) => (
+                  <div
+                    key={item.variant_id}
+                    className="flex items-center justify-between gap-4 py-4"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-brand-obsidian">
+                        {item.product_name}
+                      </p>
 
-              <span className="font-medium text-slate-900">
-                Calculated after order
-              </span>
-            </div>
+                      {(item.color || item.size) && (
+                        <p className="mt-1 text-sm text-brand-muted">
+                          {item.color && `Color: ${item.color}`}
+                          {item.color && item.size && " • "}
+                          {item.size && `Size: ${item.size}`}
+                        </p>
+                      )}
 
-            {/* TOTAL */}
+                      <p className="mt-1 text-xs text-brand-muted">
+                        Qty: {item.quantity}
+                      </p>
+                    </div>
 
-            <div className="border-t pt-4">
-              <div className="flex justify-between">
-                <span className="font-semibold text-slate-950">Total</span>
+                    <p className="shrink-0 font-semibold text-brand-espresso">
+                      ₦{(Number(item.price) * item.quantity).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
 
-                <span className="text-xl font-bold text-slate-950">
+          {/* ====================================================
+              RIGHT
+          ==================================================== */}
+
+          <aside className="h-fit rounded-2xl border border-brand-border bg-brand-warm-white p-6 shadow-sm lg:sticky lg:top-6">
+            <h2 className="text-lg font-semibold text-brand-obsidian">
+              Order Summary
+            </h2>
+
+            <div className="mt-6 space-y-4">
+              {/* SUBTOTAL */}
+              <div className="flex justify-between text-sm">
+                <span className="text-brand-muted">Subtotal</span>
+
+                <span className="font-medium text-brand-espresso">
                   ₦{subtotal.toLocaleString()}
                 </span>
               </div>
+
+              {/* DELIVERY */}
+              <div className="flex justify-between text-sm">
+                <span className="text-brand-muted">Delivery</span>
+
+                <span className="max-w-[170px] text-right font-medium text-brand-espresso">
+                  Calculated after order
+                </span>
+              </div>
+
+              {/* TOTAL */}
+              <div className="border-t border-brand-border pt-4">
+                <div className="flex justify-between">
+                  <span className="font-semibold text-brand-obsidian">
+                    Total
+                  </span>
+
+                  <span className="text-xl font-bold text-brand-obsidian">
+                    ₦{subtotal.toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* ERROR */}
-
-          {error && (
-            <div
-              role="alert"
-              className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-            >
-              {error}
-            </div>
-          )}
-
-          {/* SUBMIT */}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-
-                {user ? "Preparing payment..." : "Redirecting to login..."}
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-4 w-4" />
-
-                {user ? "Proceed to Payment" : "Login to Checkout"}
-              </>
+            {/* ERROR */}
+            {error && (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+              >
+                {error}
+              </div>
             )}
-          </button>
 
-          {/* PAYMENT MESSAGE */}
+            {/* SUBMIT */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-obsidian px-6 text-sm font-semibold text-brand-gold-light transition hover:bg-brand-espresso disabled:cursor-not-allowed disabled:bg-brand-border-dark disabled:text-brand-muted"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {user ? "Preparing payment..." : "Redirecting to login..."}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  {user ? "Proceed to Payment" : "Login to Checkout"}
+                </>
+              )}
+            </button>
 
-          <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-            {user
-              ? "You will be redirected to our secure payment page to complete your purchase."
-              : "You need to sign in before proceeding to payment."}
-          </p>
-        </aside>
-      </form>
+            {/* PAYMENT MESSAGE */}
+            <p className="mt-4 text-center text-xs leading-5 text-brand-muted">
+              {user
+                ? "You will be redirected to our secure payment page to complete your purchase."
+                : "You need to sign in before proceeding to payment."}
+            </p>
+          </aside>
+        </form>
+      </div>
     </main>
   );
 }

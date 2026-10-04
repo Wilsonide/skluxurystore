@@ -17,9 +17,7 @@ import {
 import { ProductService } from "@/app/services/product.service";
 import { ProductVariantService } from "@/app/services/product-variant.service";
 import type { ProductVariant } from "@/app/services/product-variant.service";
-
 import { useCartStore } from "@/app/store/cart-store";
-
 import { Button } from "@/components/ui/button";
 
 interface Product {
@@ -42,13 +40,11 @@ export default function ProductDetailsPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
-
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
     null,
   );
 
   const [quantity, setQuantity] = useState(1);
-
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
@@ -57,11 +53,9 @@ export default function ProductDetailsPage() {
 
   const isInvalidProductId = !productId || Number.isNaN(productId);
 
-  /*
-   * ============================================================
-   * LOAD PRODUCT
-   * ============================================================
-   */
+  /* ============================================================
+     LOAD PRODUCT
+  ============================================================ */
 
   useEffect(() => {
     if (isInvalidProductId) {
@@ -85,10 +79,6 @@ export default function ProductDetailsPage() {
         setProduct(productResponse);
         setVariants(variantResponse);
 
-        /*
-         * Select the backend's default variant first.
-         * Otherwise select the first available variant.
-         */
         const defaultVariant =
           variantResponse.find(
             (variant) => variant.is_default && variant.is_available,
@@ -117,23 +107,19 @@ export default function ProductDetailsPage() {
     return () => {
       cancelled = true;
     };
-  }, [productId]);
+  }, [productId, isInvalidProductId]);
 
-  /*
-   * ============================================================
-   * SELECTED VARIANT
-   * ============================================================
-   */
+  /* ============================================================
+     SELECTED VARIANT
+  ============================================================ */
 
   const selectedVariant = useMemo(() => {
     return variants.find((variant) => variant.id === selectedVariantId);
   }, [variants, selectedVariantId]);
 
-  /*
-   * ============================================================
-   * PRICE
-   * ============================================================
-   */
+  /* ============================================================
+     PRICE
+  ============================================================ */
 
   const currentPrice = selectedVariant?.price ?? product?.price ?? 0;
 
@@ -152,22 +138,18 @@ export default function ProductDetailsPage() {
     }).format(numericPrice);
   }, [currentPrice]);
 
-  /*
-   * ============================================================
-   * STOCK
-   * ============================================================
-   */
+  /* ============================================================
+     STOCK
+  ============================================================ */
 
   const stockQuantity = selectedVariant?.quantity ?? 0;
 
   const isAvailable =
     selectedVariant?.is_available === true && stockQuantity > 0;
 
-  /*
-   * ============================================================
-   * VARIANT ATTRIBUTES
-   * ============================================================
-   */
+  /* ============================================================
+     VARIANT ATTRIBUTES
+  ============================================================ */
 
   const hasColors = variants.some((variant) => variant.color);
 
@@ -201,16 +183,9 @@ export default function ProductDetailsPage() {
     ) as string[];
   }, [variants]);
 
-  /*
-   * ============================================================
-   * SELECT VARIANT
-   * ============================================================
-   *
-   * When the customer selects an attribute, find the variant
-   * that matches the current selection as closely as possible.
-   *
-   * For simple products, clicking a variant directly is enough.
-   */
+  /* ============================================================
+     SELECT VARIANT
+  ============================================================ */
 
   const selectVariantByAttribute = (
     attribute: "color" | "size" | "material" | "style" | "strap_type",
@@ -224,14 +199,13 @@ export default function ProductDetailsPage() {
       setSelectedVariantId(candidate.id);
       setQuantity(1);
       setSuccess("");
+      setError("");
     }
   };
 
-  /*
-   * ============================================================
-   * QUANTITY
-   * ============================================================
-   */
+  /* ============================================================
+     QUANTITY
+  ============================================================ */
 
   const increaseQuantity = () => {
     if (!selectedVariant) return;
@@ -243,11 +217,9 @@ export default function ProductDetailsPage() {
     setQuantity((current) => Math.max(1, current - 1));
   };
 
-  /*
-   * ============================================================
-   * ADD TO CART
-   * ============================================================
-   */
+  /* ============================================================
+     ADD TO CART
+  ============================================================ */
 
   const handleAddToCart = async () => {
     if (!selectedVariant) {
@@ -279,11 +251,6 @@ export default function ProductDetailsPage() {
       setError("");
       setSuccess("");
 
-      /*
-       * IMPORTANT:
-       * The cart stores the VARIANT ID.
-       */
-
       addItem({
         variant_id: selectedVariant.id,
         product_id: productId,
@@ -300,34 +267,33 @@ export default function ProductDetailsPage() {
       setSuccess("Added to cart.");
     } catch (err) {
       console.error("Failed to add product to cart:", err);
+
       setError("Unable to add this product to your cart.");
     } finally {
       setAdding(false);
     }
   };
 
-  /*
-   * ============================================================
-   * LOADING
-   * ============================================================
-   */
+  /* ============================================================
+     LOADING
+  ============================================================ */
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-brand-ivory">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div className="mb-8 h-5 w-24 rounded bg-slate-200" />
+            <div className="mb-8 h-4 w-24 rounded bg-brand-cream" />
 
             <div className="grid gap-10 lg:grid-cols-2">
-              <div className="aspect-square rounded-2xl bg-slate-200" />
+              <div className="aspect-square rounded-2xl bg-brand-cream" />
 
               <div className="space-y-5">
-                <div className="h-8 w-3/4 rounded bg-slate-200" />
-                <div className="h-6 w-1/3 rounded bg-slate-200" />
-                <div className="h-20 rounded bg-slate-200" />
-                <div className="h-12 rounded bg-slate-200" />
-                <div className="h-12 rounded bg-slate-200" />
+                <div className="h-8 w-3/4 rounded bg-brand-cream" />
+                <div className="h-6 w-1/3 rounded bg-brand-cream" />
+                <div className="h-20 rounded bg-brand-cream" />
+                <div className="h-12 rounded bg-brand-cream" />
+                <div className="h-12 rounded bg-brand-cream" />
               </div>
             </div>
           </div>
@@ -336,23 +302,26 @@ export default function ProductDetailsPage() {
     );
   }
 
-  /*
-   * ============================================================
-   * ERROR / NOT FOUND
-   * ============================================================
-   */
+  /* ============================================================
+     ERROR / NOT FOUND
+  ============================================================ */
 
   if (error && !product) {
     return (
-      <main className="min-h-screen bg-slate-50">
+      <main className="min-h-screen bg-brand-ivory">
         <div className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">
+          <div className="mb-5 h-px w-10 bg-brand-champagne" />
+
+          <h1 className="text-2xl font-semibold text-brand-obsidian">
             Product unavailable
           </h1>
 
-          <p className="mt-2 text-sm text-slate-500">{error}</p>
+          <p className="mt-2 text-sm text-brand-muted">{error}</p>
 
-          <Button className="mt-6" onClick={() => router.push("/products")}>
+          <Button
+            className="mt-6 border-brand-obsidian bg-brand-obsidian text-brand-warm-white hover:bg-brand-espresso hover:text-brand-gold-light"
+            onClick={() => router.push("/products")}
+          >
             Back to shop
           </Button>
         </div>
@@ -364,19 +333,16 @@ export default function ProductDetailsPage() {
     return null;
   }
 
-  /*
-   * ============================================================
-   * PRODUCT DETAILS
-   * ============================================================
-   */
-
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-ivory">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Back */}
+        {/* ======================================================
+            BACK
+        ====================================================== */}
+
         <Link
           href="/products"
-          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900"
+          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-brand-muted transition-colors hover:text-brand-obsidian"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to shop
@@ -388,7 +354,7 @@ export default function ProductDetailsPage() {
           ==================================================== */}
 
           <div>
-            <div className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100">
+            <div className="relative aspect-square overflow-hidden rounded-2xl border border-brand-border bg-brand-cream shadow-sm">
               {product.cover_image ? (
                 <Image
                   src={product.cover_image}
@@ -396,16 +362,18 @@ export default function ProductDetailsPage() {
                   fill
                   priority
                   sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
+                  className="object-cover transition-transform duration-700 hover:scale-[1.02]"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                <div className="flex h-full items-center justify-center text-sm text-brand-muted">
                   No image available
                 </div>
               )}
 
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-obsidian/10 via-transparent to-transparent" />
+
               {product.is_featured && (
-                <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-sm">
+                <span className="absolute left-4 top-4 rounded-full border border-brand-champagne/40 bg-brand-obsidian/90 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-gold-light shadow-sm backdrop-blur-sm">
                   Featured
                 </span>
               )}
@@ -418,23 +386,30 @@ export default function ProductDetailsPage() {
 
           <div className="flex flex-col">
             <div>
-              <p className="text-sm font-medium text-slate-500">Product</p>
+              <div className="flex items-center gap-3">
+                <span className="h-px w-8 bg-brand-champagne" />
 
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-champagne">
+                  Product
+                </p>
+              </div>
+
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-brand-obsidian sm:text-4xl">
                 {product.name}
               </h1>
 
               <div className="mt-5">
-                <p className="text-2xl font-bold text-slate-900">
+                <p className="text-2xl font-semibold tracking-tight text-brand-obsidian">
                   {formattedPrice}
                 </p>
               </div>
             </div>
 
             {/* Description */}
+
             {product.description && (
-              <div className="mt-6 border-t border-slate-100 pt-6">
-                <p className="text-sm leading-7 text-slate-600">
+              <div className="mt-6 border-t border-brand-border pt-6">
+                <p className="text-sm leading-7 text-brand-muted-dark">
                   {product.description}
                 </p>
               </div>
@@ -445,17 +420,18 @@ export default function ProductDetailsPage() {
             ================================================== */}
 
             {variants.length > 0 && (
-              <div className="mt-8 space-y-6 border-t border-slate-100 pt-6">
+              <div className="mt-8 space-y-6 border-t border-brand-border pt-6">
                 {/* Color */}
+
                 {hasColors && colors.length > 0 && (
                   <div>
                     <div className="mb-3 flex items-center justify-between">
-                      <label className="text-sm font-semibold text-slate-900">
+                      <label className="text-sm font-semibold text-brand-obsidian">
                         Color
                       </label>
 
                       {selectedVariant?.color && (
-                        <span className="text-sm text-slate-500">
+                        <span className="text-sm text-brand-muted">
                           {selectedVariant.color}
                         </span>
                       )}
@@ -472,10 +448,10 @@ export default function ProductDetailsPage() {
                             onClick={() =>
                               selectVariantByAttribute("color", color)
                             }
-                            className={`rounded-lg border px-4 py-2 text-sm transition ${
+                            className={`rounded-lg border px-4 py-2 text-sm transition-all duration-200 ${
                               active
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                                ? "border-brand-obsidian bg-brand-obsidian text-brand-gold-light shadow-sm"
+                                : "border-brand-border bg-brand-warm-white text-brand-muted-dark hover:border-brand-champagne hover:text-brand-obsidian"
                             }`}
                           >
                             {color}
@@ -487,9 +463,10 @@ export default function ProductDetailsPage() {
                 )}
 
                 {/* Size */}
+
                 {sizes.length > 0 && (
                   <div>
-                    <label className="mb-3 block text-sm font-semibold text-slate-900">
+                    <label className="mb-3 block text-sm font-semibold text-brand-obsidian">
                       Size
                     </label>
 
@@ -504,10 +481,10 @@ export default function ProductDetailsPage() {
                             onClick={() =>
                               selectVariantByAttribute("size", size)
                             }
-                            className={`min-w-12 rounded-lg border px-4 py-2 text-sm transition ${
+                            className={`min-w-12 rounded-lg border px-4 py-2 text-sm transition-all duration-200 ${
                               active
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                                ? "border-brand-obsidian bg-brand-obsidian text-brand-gold-light shadow-sm"
+                                : "border-brand-border bg-brand-warm-white text-brand-muted-dark hover:border-brand-champagne hover:text-brand-obsidian"
                             }`}
                           >
                             {size}
@@ -519,9 +496,10 @@ export default function ProductDetailsPage() {
                 )}
 
                 {/* Material */}
+
                 {materials.length > 0 && (
                   <div>
-                    <label className="mb-3 block text-sm font-semibold text-slate-900">
+                    <label className="mb-3 block text-sm font-semibold text-brand-obsidian">
                       Material
                     </label>
 
@@ -536,10 +514,10 @@ export default function ProductDetailsPage() {
                             onClick={() =>
                               selectVariantByAttribute("material", material)
                             }
-                            className={`rounded-lg border px-4 py-2 text-sm transition ${
+                            className={`rounded-lg border px-4 py-2 text-sm transition-all duration-200 ${
                               active
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                                ? "border-brand-obsidian bg-brand-obsidian text-brand-gold-light shadow-sm"
+                                : "border-brand-border bg-brand-warm-white text-brand-muted-dark hover:border-brand-champagne hover:text-brand-obsidian"
                             }`}
                           >
                             {material}
@@ -551,9 +529,10 @@ export default function ProductDetailsPage() {
                 )}
 
                 {/* Style */}
+
                 {styles.length > 0 && (
                   <div>
-                    <label className="mb-3 block text-sm font-semibold text-slate-900">
+                    <label className="mb-3 block text-sm font-semibold text-brand-obsidian">
                       Style
                     </label>
 
@@ -568,10 +547,10 @@ export default function ProductDetailsPage() {
                             onClick={() =>
                               selectVariantByAttribute("style", style)
                             }
-                            className={`rounded-lg border px-4 py-2 text-sm transition ${
+                            className={`rounded-lg border px-4 py-2 text-sm transition-all duration-200 ${
                               active
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                                ? "border-brand-obsidian bg-brand-obsidian text-brand-gold-light shadow-sm"
+                                : "border-brand-border bg-brand-warm-white text-brand-muted-dark hover:border-brand-champagne hover:text-brand-obsidian"
                             }`}
                           >
                             {style}
@@ -583,9 +562,10 @@ export default function ProductDetailsPage() {
                 )}
 
                 {/* Strap type */}
+
                 {strapTypes.length > 0 && (
                   <div>
-                    <label className="mb-3 block text-sm font-semibold text-slate-900">
+                    <label className="mb-3 block text-sm font-semibold text-brand-obsidian">
                       Strap type
                     </label>
 
@@ -601,10 +581,10 @@ export default function ProductDetailsPage() {
                             onClick={() =>
                               selectVariantByAttribute("strap_type", strapType)
                             }
-                            className={`rounded-lg border px-4 py-2 text-sm transition ${
+                            className={`rounded-lg border px-4 py-2 text-sm transition-all duration-200 ${
                               active
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                                ? "border-brand-obsidian bg-brand-obsidian text-brand-gold-light shadow-sm"
+                                : "border-brand-border bg-brand-warm-white text-brand-muted-dark hover:border-brand-champagne hover:text-brand-obsidian"
                             }`}
                           >
                             {strapType}
@@ -622,26 +602,28 @@ export default function ProductDetailsPage() {
             ================================================== */}
 
             {selectedVariant && (
-              <div className="mt-6 rounded-xl bg-slate-50 p-4">
+              <div className="mt-6 rounded-xl border border-brand-border bg-brand-cream p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-muted">
                       SKU
                     </p>
 
-                    <p className="mt-1 text-sm font-medium text-slate-700">
+                    <p className="mt-1 text-sm font-medium text-brand-obsidian">
                       {selectedVariant.sku}
                     </p>
                   </div>
 
                   <div className="text-right">
                     {isAvailable ? (
-                      <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
-                        <Check className="h-4 w-4" />
+                      <p className="flex items-center gap-1.5 text-sm font-medium text-brand-espresso">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-champagne/20">
+                          <Check className="h-3 w-3 text-brand-espresso" />
+                        </span>
                         In stock
                       </p>
                     ) : (
-                      <p className="text-sm font-medium text-red-600">
+                      <p className="text-sm font-medium text-brand-muted">
                         Out of stock
                       </p>
                     )}
@@ -649,7 +631,7 @@ export default function ProductDetailsPage() {
                 </div>
 
                 {isAvailable && (
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-brand-muted">
                     {stockQuantity} available
                   </p>
                 )}
@@ -661,21 +643,21 @@ export default function ProductDetailsPage() {
             ================================================== */}
 
             <div className="mt-6">
-              <label className="mb-3 block text-sm font-semibold text-slate-900">
+              <label className="mb-3 block text-sm font-semibold text-brand-obsidian">
                 Quantity
               </label>
 
-              <div className="flex h-11 w-fit items-center rounded-lg border border-slate-200">
+              <div className="flex h-11 w-fit items-center overflow-hidden rounded-lg border border-brand-border bg-brand-warm-white">
                 <button
                   type="button"
                   onClick={decreaseQuantity}
                   disabled={quantity <= 1}
-                  className="flex h-full w-11 items-center justify-center text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                  className="flex h-full w-11 items-center justify-center text-brand-muted-dark transition hover:bg-brand-cream hover:text-brand-obsidian disabled:opacity-40"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
 
-                <span className="flex w-12 justify-center text-sm font-semibold text-slate-900">
+                <span className="flex w-12 justify-center text-sm font-semibold text-brand-obsidian">
                   {quantity}
                 </span>
 
@@ -685,7 +667,7 @@ export default function ProductDetailsPage() {
                   disabled={
                     !selectedVariant || quantity >= selectedVariant.quantity
                   }
-                  className="flex h-full w-11 items-center justify-center text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                  className="flex h-full w-11 items-center justify-center text-brand-muted-dark transition hover:bg-brand-cream hover:text-brand-obsidian disabled:opacity-40"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -697,13 +679,13 @@ export default function ProductDetailsPage() {
             ================================================== */}
 
             {error && (
-              <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mt-5 rounded-lg border border-brand-border bg-brand-cream px-4 py-3 text-sm text-brand-espresso">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              <div className="mt-5 rounded-lg border border-brand-champagne/40 bg-brand-gold-soft/30 px-4 py-3 text-sm font-medium text-brand-espresso">
                 {success}
               </div>
             )}
@@ -717,7 +699,7 @@ export default function ProductDetailsPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={adding || !selectedVariant || !isAvailable}
-                className="h-12 w-full rounded-xl text-base font-semibold"
+                className="h-12 w-full rounded-xl border border-brand-obsidian bg-brand-obsidian text-base font-semibold text-brand-warm-white transition-all hover:bg-brand-espresso hover:text-brand-gold-light disabled:bg-brand-cream disabled:text-brand-muted"
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
 
@@ -735,34 +717,34 @@ export default function ProductDetailsPage() {
                 STORE BENEFITS
             ================================================== */}
 
-            <div className="mt-8 grid gap-4 border-t border-slate-100 pt-6">
+            <div className="mt-8 grid gap-4 border-t border-brand-border pt-6">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
-                  <Truck className="h-4 w-4 text-slate-700" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-cream">
+                  <Truck className="h-4 w-4 text-brand-champagne" />
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-brand-obsidian">
                     Reliable delivery
                   </p>
 
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-brand-muted">
                     Delivered safely to your address.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
-                  <ShieldCheck className="h-4 w-4 text-slate-700" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-cream">
+                  <ShieldCheck className="h-4 w-4 text-brand-champagne" />
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-brand-obsidian">
                     Secure checkout
                   </p>
 
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-brand-muted">
                     Your payment information is protected.
                   </p>
                 </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ProductVariant {
   id: number;
   product_id: number;
@@ -22,6 +23,7 @@ export interface ProductVariant {
 }
 
 export interface Product {
+  [x: string]: any;
   id: number;
   name: string;
   description: string;

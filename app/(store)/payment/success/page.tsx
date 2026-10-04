@@ -33,7 +33,7 @@ export default function PaymentSuccessPage() {
         const payment = await PaymentService.verify(reference);
 
         if (payment.status === "successful") {
-          /*
+          /**
            * Payment has been confirmed by Paystack.
            */
           clearCart();
@@ -41,7 +41,7 @@ export default function PaymentSuccessPage() {
           setStatus("success");
           setMessage("Your payment was successful.");
 
-          /*
+          /**
            * Redirect to the order page.
            *
            * The payment response contains order_id.
@@ -59,6 +59,7 @@ export default function PaymentSuccessPage() {
         console.error("Payment verification failed:", error);
 
         setStatus("failed");
+
         setMessage(
           "We could not verify your payment. Please contact support if money was deducted.",
         );
@@ -69,56 +70,71 @@ export default function PaymentSuccessPage() {
   }, [searchParams, clearCart, router]);
 
   return (
-    <main className="flex min-h-[70vh] items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border bg-white p-8 text-center shadow-sm">
+    <main className="flex min-h-[70vh] items-center justify-center bg-brand-ivory px-4 py-16">
+      <div className="w-full max-w-md rounded-2xl border border-brand-border bg-brand-warm-white p-8 text-center shadow-sm">
+        {/* VERIFYING */}
         {status === "verifying" && (
           <>
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-brand-gold-light bg-brand-gold-soft">
+              <Loader2 className="h-8 w-8 animate-spin text-brand-champagne" />
             </div>
 
-            <h1 className="mt-6 text-2xl font-bold text-slate-950">
+            <p className="mt-6 text-sm font-medium tracking-wide text-brand-champagne">
+              Secure Payment
+            </p>
+
+            <h1 className="mt-1 text-2xl font-bold text-brand-obsidian">
               Verifying Payment
             </h1>
 
-            <p className="mt-3 text-sm text-slate-500">{message}</p>
+            <p className="mt-3 text-sm text-brand-muted">{message}</p>
           </>
         )}
 
+        {/* SUCCESS */}
         {status === "success" && (
           <>
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
-              <CheckCircle2 className="h-9 w-9 text-green-600" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-brand-gold-light bg-brand-gold-soft">
+              <CheckCircle2 className="h-9 w-9 text-brand-champagne" />
             </div>
 
-            <h1 className="mt-6 text-2xl font-bold text-slate-950">
+            <p className="mt-6 text-sm font-medium tracking-wide text-brand-champagne">
+              Order Confirmed
+            </p>
+
+            <h1 className="mt-1 text-2xl font-bold text-brand-obsidian">
               Payment Successful
             </h1>
 
-            <p className="mt-3 text-sm text-slate-500">{message}</p>
+            <p className="mt-3 text-sm text-brand-muted">{message}</p>
 
-            <p className="mt-4 text-xs text-slate-400">
+            <p className="mt-4 text-xs text-brand-muted">
               Redirecting to your order...
             </p>
           </>
         )}
 
+        {/* FAILED */}
         {status === "failed" && (
           <>
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-red-200 bg-red-50">
               <XCircle className="h-9 w-9 text-red-600" />
             </div>
 
-            <h1 className="mt-6 text-2xl font-bold text-slate-950">
+            <p className="mt-6 text-sm font-medium tracking-wide text-red-600">
+              Payment Issue
+            </p>
+
+            <h1 className="mt-1 text-2xl font-bold text-brand-obsidian">
               Payment Verification Failed
             </h1>
 
-            <p className="mt-3 text-sm text-slate-500">{message}</p>
+            <p className="mt-3 text-sm leading-6 text-brand-muted">{message}</p>
 
             <button
               type="button"
               onClick={() => router.push("/checkout")}
-              className="mt-6 rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+              className="mt-6 rounded-xl bg-brand-obsidian px-6 py-3 text-sm font-semibold text-brand-gold-light transition hover:bg-brand-espresso"
             >
               Return to Checkout
             </button>

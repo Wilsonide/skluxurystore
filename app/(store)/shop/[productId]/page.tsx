@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-
 import { ArrowLeft, ShoppingCart } from "lucide-react";
 
 import ProductGallery from "@/components/products/ProductGallery";
 import ProductVariantSelector from "@/components/products/ProductVariantSelector";
-
 import { useProduct } from "@/app/hooks/use-product";
 import { useCartStore } from "@/app/store/cart-store";
 
@@ -19,49 +17,64 @@ export default function ProductDetailsPage() {
   const productId = Number(params.productId);
 
   const { product, loading, error } = useProduct(productId);
-
   const addItem = useCartStore((state) => state.addItem);
 
   const [quantity, setQuantity] = useState(1);
-
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
     null,
   );
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-16">
-        <div className="grid gap-10 lg:grid-cols-2">
-          <div className="aspect-square animate-pulse rounded-2xl bg-slate-200" />
+      <main className="min-h-screen bg-brand-ivory">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="mb-8 h-5 w-28 animate-pulse rounded bg-brand-cream" />
 
-          <div className="space-y-5">
-            <div className="h-8 w-2/3 animate-pulse rounded bg-slate-200" />
+          <div className="grid gap-12 lg:grid-cols-2">
+            <div className="aspect-square animate-pulse rounded-2xl bg-brand-cream" />
 
-            <div className="h-5 w-1/3 animate-pulse rounded bg-slate-200" />
-
-            <div className="h-24 animate-pulse rounded bg-slate-200" />
+            <div className="space-y-6 py-2">
+              <div className="h-4 w-24 animate-pulse rounded bg-brand-cream" />
+              <div className="h-10 w-2/3 animate-pulse rounded bg-brand-cream" />
+              <div className="h-7 w-32 animate-pulse rounded bg-brand-cream" />
+              <div className="space-y-3">
+                <div className="h-4 w-full animate-pulse rounded bg-brand-cream" />
+                <div className="h-4 w-11/12 animate-pulse rounded bg-brand-cream" />
+                <div className="h-4 w-4/5 animate-pulse rounded bg-brand-cream" />
+              </div>
+              <div className="h-32 animate-pulse rounded-xl bg-brand-cream" />
+              <div className="h-14 animate-pulse rounded-xl bg-brand-cream" />
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">Product not found</h1>
+      <main className="min-h-screen bg-brand-ivory">
+        <div className="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:px-8">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand-border bg-brand-warm-white">
+            <ShoppingCart className="h-6 w-6 text-brand-champagne" />
+          </div>
 
-        <p className="mt-2 text-sm text-slate-500">
-          The product may have been removed or is no longer available.
-        </p>
+          <h1 className="mt-6 text-2xl font-semibold tracking-tight text-brand-obsidian">
+            Product not found
+          </h1>
 
-        <Link
-          href="/shop"
-          className="mt-6 inline-flex rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
-        >
-          Back to Shop
-        </Link>
-      </div>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-brand-muted">
+            The product may have been removed or is no longer available.
+          </p>
+
+          <Link
+            href="/shop"
+            className="mt-7 inline-flex items-center rounded-xl bg-brand-obsidian px-5 py-3 text-sm font-semibold text-brand-warm-white transition-colors hover:bg-brand-espresso hover:text-brand-gold-light"
+          >
+            Back to Shop
+          </Link>
+        </div>
+      </main>
     );
   }
 
@@ -77,7 +90,6 @@ export default function ProductDetailsPage() {
 
   const handleVariantChange = (variantId: number) => {
     setSelectedVariantId(variantId);
-
     setQuantity(1);
   };
 
@@ -103,102 +115,154 @@ export default function ProductDetailsPage() {
   };
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <Link
-        href="/shop"
-        className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to shop
-      </Link>
+    <main className="min-h-screen bg-brand-ivory">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        {/* Back navigation */}
+        <Link
+          href="/shop"
+          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-brand-muted transition-colors hover:text-brand-obsidian"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to shop
+        </Link>
 
-      <div className="grid gap-12 lg:grid-cols-2">
-        {/* Product Gallery */}
-
-        <ProductGallery product={product} />
-
-        {/* Product Information */}
-
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950">
-            {product.name}
-          </h1>
-
-          <div className="mt-6">
-            {selectedVariant && (
-              <p className="text-2xl font-bold text-slate-950">
-                ₦{Number(selectedVariant.price).toLocaleString()}
-              </p>
-            )}
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* Product Gallery */}
+          <div>
+            <ProductGallery product={product} />
           </div>
 
-          {product.description && (
-            <p className="mt-6 leading-7 text-slate-600">
-              {product.description}
-            </p>
-          )}
-
-          {/* Variants */}
-
-          {variants.length > 0 && (
-            <div className="mt-8">
-              <ProductVariantSelector
-                variants={variants}
-                selectedVariantId={selectedVariant?.id ?? null}
-                onChange={handleVariantChange}
-              />
-            </div>
-          )}
-
-          {/* Quantity */}
-
-          {selectedVariant && (
-            <div className="mt-8">
-              <p className="mb-3 text-sm font-medium text-slate-900">
-                Quantity
+          {/* Product Information */}
+          <div className="flex flex-col">
+            {/* Product identity */}
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-brand-champagne">
+                {product.category?.name ?? "Collection"}
               </p>
 
-              <div className="flex w-fit items-center rounded-lg border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 text-lg"
-                >
-                  −
-                </button>
+              <h1 className="text-3xl font-semibold tracking-tight text-brand-obsidian sm:text-4xl">
+                {product.name}
+              </h1>
 
-                <span className="min-w-10 text-center text-sm">{quantity}</span>
+              {selectedVariant && (
+                <p className="mt-5 text-2xl font-semibold tracking-tight text-brand-obsidian">
+                  ₦{Number(selectedVariant.price).toLocaleString()}
+                </p>
+              )}
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setQuantity(
-                      Math.min(selectedVariant.quantity, quantity + 1),
-                    )
-                  }
-                  className="px-4 py-2 text-lg"
-                >
-                  +
-                </button>
+            {/* Description */}
+            {product.description && (
+              <div className="mt-7 border-t border-brand-border pt-7">
+                <p className="max-w-xl text-sm leading-7 text-brand-muted-dark">
+                  {product.description}
+                </p>
+              </div>
+            )}
+
+            {/* Variants */}
+            {variants.length > 0 && (
+              <div className="mt-8 border-t border-brand-border pt-8">
+                <ProductVariantSelector
+                  variants={variants}
+                  selectedVariantId={selectedVariant?.id ?? null}
+                  onChange={handleVariantChange}
+                />
+              </div>
+            )}
+
+            {/* Quantity */}
+            {selectedVariant && (
+              <div className="mt-8 border-t border-brand-border pt-8">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-brand-obsidian">
+                    Quantity
+                  </p>
+
+                  <p className="text-xs text-brand-muted">
+                    {selectedVariant.quantity} available
+                  </p>
+                </div>
+
+                <div className="mt-3 flex w-fit items-center overflow-hidden rounded-xl border border-brand-border bg-brand-warm-white">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                    className="flex h-11 w-11 items-center justify-center text-lg text-brand-espresso transition-colors hover:bg-brand-cream disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+
+                  <span className="flex h-11 min-w-12 items-center justify-center border-x border-brand-border px-3 text-sm font-semibold text-brand-obsidian">
+                    {quantity}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantity(
+                        Math.min(selectedVariant.quantity, quantity + 1),
+                      )
+                    }
+                    disabled={quantity >= selectedVariant.quantity}
+                    className="flex h-11 w-11 items-center justify-center text-lg text-brand-espresso transition-colors hover:bg-brand-cream disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Add to cart */}
+            <div className="mt-8">
+              <button
+                type="button"
+                disabled={!selectedVariant || selectedVariant.quantity <= 0}
+                onClick={handleAddToCart}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-obsidian px-6 py-4 text-sm font-semibold text-brand-warm-white transition-all duration-200 hover:bg-brand-espresso hover:text-brand-gold-light disabled:cursor-not-allowed disabled:bg-brand-border-dark disabled:text-brand-muted"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {selectedVariant?.quantity ? "Add to Cart" : "Out of Stock"}
+              </button>
+
+              <p className="mt-3 text-center text-xs text-brand-muted">
+                Secure checkout · Quality assured
+              </p>
+            </div>
+
+            {/* Store reassurance */}
+            <div className="mt-8 grid grid-cols-3 divide-x divide-brand-border rounded-xl border border-brand-border bg-brand-warm-white py-5">
+              <div className="px-3 text-center">
+                <p className="text-xs font-semibold text-brand-obsidian">
+                  Quality
+                </p>
+                <p className="mt-1 text-[11px] leading-4 text-brand-muted">
+                  Carefully selected
+                </p>
               </div>
 
-              <p className="mt-2 text-xs text-slate-500">
-                {selectedVariant.quantity} available
-              </p>
+              <div className="px-3 text-center">
+                <p className="text-xs font-semibold text-brand-obsidian">
+                  Secure
+                </p>
+                <p className="mt-1 text-[11px] leading-4 text-brand-muted">
+                  Safe checkout
+                </p>
+              </div>
+
+              <div className="px-3 text-center">
+                <p className="text-xs font-semibold text-brand-obsidian">
+                  Support
+                </p>
+                <p className="mt-1 text-[11px] leading-4 text-brand-muted">
+                  We&apos;re here to help
+                </p>
+              </div>
             </div>
-          )}
-
-          {/* Add to Cart */}
-
-          <button
-            type="button"
-            disabled={!selectedVariant || selectedVariant.quantity <= 0}
-            onClick={handleAddToCart}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            Add to Cart
-          </button>
+          </div>
         </div>
       </div>
     </main>

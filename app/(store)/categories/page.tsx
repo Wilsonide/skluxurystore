@@ -19,40 +19,51 @@ export default function CategoriesPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-red-100">
-            <FolderOpen className="h-5 w-5 text-red-600" />
+      <main className="min-h-screen bg-brand-ivory">
+        <section className="border-b border-brand-border bg-brand-cream">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+            <div className="max-w-xl rounded-2xl border border-red-200 bg-brand-warm-white p-6 shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50">
+                <FolderOpen className="h-5 w-5 text-red-600" />
+              </div>
+
+              <h2 className="mt-4 font-semibold text-brand-obsidian">
+                Unable to load categories
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-red-600">{error}</p>
+            </div>
           </div>
-
-          <h2 className="mt-4 font-semibold text-red-900">
-            Unable to load categories
-          </h2>
-
-          <p className="mt-2 text-sm leading-6 text-red-700">{error}</p>
-        </div>
+        </section>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-ivory">
       {/* ============================================================
           PAGE HEADER
       ============================================================ */}
-      <section className="border-b border-slate-100 bg-slate-50/60">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section className="relative overflow-hidden border-b border-brand-border bg-brand-cream">
+        {/* Subtle champagne accent */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-champagne/[0.08] blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-xs font-semibold text-amber-800">
-              <Sparkles className="h-3.5 w-3.5" />
-              Explore the collection
+            <div className="mb-5 flex items-center gap-3">
+              <span className="h-px w-9 bg-brand-champagne" />
+
+              <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-champagne">
+                <Sparkles className="h-3.5 w-3.5" />
+                Explore the collection
+              </span>
             </div>
 
-            <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="text-4xl font-semibold tracking-tight text-brand-obsidian sm:text-5xl">
               Shop by Category
             </h1>
 
-            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+            <p className="mt-5 max-w-xl text-base leading-7 text-brand-muted-dark">
               Browse our collection by category and discover pieces selected to
               complement your style.
             </p>
@@ -63,16 +74,18 @@ export default function CategoriesPage() {
       {/* ============================================================
           CATEGORIES
       ============================================================ */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        {categories.length === 0 ? (
-          <EmptyCategories />
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {categories.map((category) => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </div>
-        )}
+      <section className="bg-brand-ivory">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+          {categories.length === 0 ? (
+            <EmptyCategories />
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {categories.map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
     </main>
   );
@@ -101,12 +114,15 @@ function CategoryCard({
 
   if (loading) {
     return (
-      <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-slate-100">
-        <div className="absolute inset-0 animate-pulse bg-slate-200" />
+      <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-brand-border bg-brand-cream">
+        <div className="absolute inset-0 animate-pulse bg-brand-cream" />
 
         <div className="absolute inset-x-0 bottom-0 p-6">
-          <div className="h-5 w-32 animate-pulse rounded bg-white/70" />
-          <div className="mt-3 h-3 w-44 animate-pulse rounded bg-white/50" />
+          <div className="h-3 w-20 animate-pulse rounded bg-brand-border" />
+
+          <div className="mt-3 h-6 w-32 animate-pulse rounded bg-brand-border" />
+
+          <div className="mt-3 h-3 w-44 animate-pulse rounded bg-brand-border" />
         </div>
       </div>
     );
@@ -115,7 +131,7 @@ function CategoryCard({
   return (
     <Link
       href={`/categories/${category.id}`}
-      className="group relative block aspect-[4/5] overflow-hidden rounded-3xl bg-slate-200 shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-2xl"
+      className="group relative block aspect-[4/5] overflow-hidden rounded-3xl bg-brand-cream shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(23,18,15,0.16)]"
     >
       {/* Image */}
       <Image
@@ -123,45 +139,50 @@ function CategoryCard({
         alt={category.name}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-        className="object-cover transition duration-700 ease-out group-hover:scale-105"
+        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
       />
 
       {/* Image treatment */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent opacity-90 transition duration-500 group-hover:opacity-95" />
+      <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian via-brand-obsidian/35 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-95" />
 
-      {/* Top accent */}
-      <div className="absolute left-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition duration-300 group-hover:bg-white group-hover:text-slate-950">
+      {/* Champagne glow */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-brand-champagne/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+      {/* Top icon */}
+      <div className="absolute left-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-brand-gold-light/25 bg-brand-obsidian/25 text-brand-gold-light backdrop-blur-md transition-all duration-300 group-hover:border-brand-gold-light/60 group-hover:bg-brand-obsidian/70">
         <FolderOpen className="h-4 w-4" />
       </div>
 
       {/* Arrow */}
-      <div className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/10 text-white backdrop-blur-md transition duration-300 group-hover:bg-white group-hover:text-slate-950">
+      <div className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-brand-gold-light/25 bg-brand-obsidian/25 text-brand-gold-light backdrop-blur-md transition-all duration-300 group-hover:border-brand-gold-light group-hover:bg-brand-gold-light group-hover:text-brand-obsidian">
         <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
       </div>
 
       {/* Content */}
       <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold-light/75">
           Category
         </p>
 
-        <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+        <h2 className="text-xl font-semibold tracking-tight text-brand-warm-white sm:text-2xl">
           {category.name}
         </h2>
 
         {category.description ? (
-          <p className="mt-2 line-clamp-2 max-w-[90%] text-sm leading-5 text-white/70">
+          <p className="mt-2 line-clamp-2 max-w-[90%] text-sm leading-5 text-brand-warm-white/70">
             {category.description}
           </p>
         ) : (
-          <p className="mt-2 text-sm text-white/65">Explore the collection</p>
+          <p className="mt-2 text-sm text-brand-warm-white/65">
+            Explore the collection
+          </p>
         )}
 
         {/* Hover action */}
-        <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-white">
+        <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-brand-warm-white">
           <span>Shop category</span>
 
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 transition duration-300 group-hover:bg-white group-hover:text-slate-950">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-warm-white/10 transition-all duration-300 group-hover:bg-brand-gold-light group-hover:text-brand-obsidian">
             <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
           </span>
         </div>
@@ -176,34 +197,41 @@ function CategoryCard({
 
 function CategoriesSkeleton() {
   return (
-    <main className="min-h-screen bg-white">
-      <section className="border-b border-slate-100 bg-slate-50/60">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+    <main className="min-h-screen bg-brand-ivory">
+      {/* Light header skeleton */}
+      <section className="border-b border-brand-border bg-brand-cream">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="max-w-2xl">
-            <div className="h-7 w-44 animate-pulse rounded-full bg-slate-200" />
+            <div className="h-3 w-36 animate-pulse rounded bg-brand-gold-soft" />
 
-            <div className="mt-5 h-12 w-72 animate-pulse rounded-lg bg-slate-200 sm:w-96" />
+            <div className="mt-5 h-12 w-72 animate-pulse rounded-lg bg-brand-border-dark/50 sm:w-96" />
 
-            <div className="mt-4 h-4 w-full max-w-xl animate-pulse rounded bg-slate-200" />
-            <div className="mt-2 h-4 w-4/5 max-w-lg animate-pulse rounded bg-slate-200" />
+            <div className="mt-5 h-4 w-full max-w-xl animate-pulse rounded bg-brand-border" />
+
+            <div className="mt-2 h-4 w-4/5 max-w-lg animate-pulse rounded bg-brand-border" />
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <div
-              key={index}
-              className="relative aspect-[4/5] animate-pulse overflow-hidden rounded-3xl bg-slate-200"
-            >
-              <div className="absolute inset-x-0 bottom-0 p-6">
-                <div className="h-3 w-20 rounded bg-slate-300" />
-                <div className="mt-3 h-6 w-32 rounded bg-slate-300" />
-                <div className="mt-3 h-3 w-44 rounded bg-slate-300" />
+      {/* Light cards area */}
+      <section className="bg-brand-ivory">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="relative aspect-[4/5] animate-pulse overflow-hidden rounded-3xl border border-brand-border bg-brand-cream"
+              >
+                <div className="absolute inset-x-0 bottom-0 p-6">
+                  <div className="h-3 w-20 rounded bg-brand-border" />
+
+                  <div className="mt-3 h-6 w-32 rounded bg-brand-border" />
+
+                  <div className="mt-3 h-3 w-44 rounded bg-brand-border" />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
     </main>
@@ -216,22 +244,22 @@ function CategoriesSkeleton() {
 
 function EmptyCategories() {
   return (
-    <div className="mx-auto max-w-xl rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-16 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <FolderOpen className="h-7 w-7 text-slate-400" />
+    <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-brand-border-dark bg-brand-warm-white px-6 py-16 text-center">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-cream ring-1 ring-brand-border">
+        <FolderOpen className="h-7 w-7 text-brand-champagne" />
       </div>
 
-      <h2 className="mt-6 text-xl font-bold text-slate-950">
+      <h2 className="mt-6 text-xl font-semibold text-brand-obsidian">
         No categories available
       </h2>
 
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-brand-muted">
         Categories will appear here once they have been added to the store.
       </p>
 
       <Link
         href="/shop"
-        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-obsidian px-5 py-3 text-sm font-semibold text-brand-warm-white transition-all duration-200 hover:bg-brand-espresso hover:text-brand-gold-light"
       >
         Browse Shop
         <ArrowRight className="h-4 w-4" />
