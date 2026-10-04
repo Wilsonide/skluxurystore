@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
   Boxes,
   CreditCard,
@@ -63,23 +63,14 @@ export default function AdminLayout({
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
-  const [hydrated, setHydrated] = useState(() =>
-    useAuthStore.persist.hasHydrated(),
+  const hydrated = useSyncExternalStore(
+    (onStoreChange) => {
+      const persist = useAuthStore.persist;
+      return persist ? persist.onFinishHydration(onStoreChange) : () => {};
+    },
+    () => useAuthStore.persist?.hasHydrated() ?? true,
+    () => false,
   );
-
-  /*
-   * ============================================================
-   * WAIT FOR ZUSTAND AUTH STORE TO HYDRATE
-   * ============================================================
-   */
-
-  useEffect(() => {
-    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
-
-    return unsubscribe;
-  }, []);
 
   /*
    * ============================================================
@@ -124,11 +115,17 @@ export default function AdminLayout({
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand-gold-light bg-brand-gold-soft">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand-champagne border-t-transparent" />
+          </div>
 
-          <p className="mt-4 text-sm text-slate-500">
+          <p className="mt-5 text-sm font-medium tracking-wide text-brand-champagne">
+            Store Administration
+          </p>
+
+          <p className="mt-1 text-sm text-brand-muted">
             Checking authentication...
           </p>
         </div>
@@ -144,11 +141,15 @@ export default function AdminLayout({
 
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand-gold-light bg-brand-gold-soft">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand-champagne border-t-transparent" />
+          </div>
 
-          <p className="mt-4 text-sm text-slate-500">Redirecting to login...</p>
+          <p className="mt-5 text-sm text-brand-muted">
+            Redirecting to login...
+          </p>
         </div>
       </div>
     );
@@ -166,19 +167,23 @@ export default function AdminLayout({
 
   if (!isAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-        <div className="text-center">
-          <h1 className="text-xl font-semibold text-slate-900">
+      <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
+        <div className="max-w-md text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand-border bg-brand-cream">
+            <Store className="h-6 w-6 text-brand-champagne" />
+          </div>
+
+          <h1 className="mt-6 text-xl font-semibold text-brand-obsidian">
             Access denied
           </h1>
 
-          <p className="mt-2 text-sm text-slate-500">
-            You do not have permission to access this area.
+          <p className="mt-2 text-sm leading-6 text-brand-muted">
+            You do not have permission to access the administration area.
           </p>
 
           <Link
             href="/shop"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-obsidian px-5 py-3 text-sm font-semibold text-brand-gold-light transition hover:bg-brand-espresso"
           >
             <Store className="h-4 w-4" />
             Visit Store
@@ -213,15 +218,18 @@ export default function AdminLayout({
    */
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-brand-ivory">
       <div className="flex min-h-screen">
+        {/* ================================================== */}
         {/* SIDEBAR */}
-        <aside className="hidden w-64 shrink-0 border-r bg-white lg:flex lg:flex-col">
+        {/* ================================================== */}
+
+        <aside className="hidden w-64 shrink-0 border-r border-brand-border bg-brand-warm-white lg:flex lg:flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center border-b px-6">
+          <div className="flex h-16 items-center border-b border-brand-border px-6">
             <Link
               href="/admin"
-              className="text-xl font-bold tracking-tight text-slate-950"
+              className="text-xl font-bold tracking-tight text-brand-obsidian"
             >
               Store Admin
             </Link>
@@ -241,10 +249,10 @@ export default function AdminLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                     active
-                      ? "bg-slate-950 text-white"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                      ? "bg-brand-obsidian text-brand-gold-light"
+                      : "text-brand-muted-dark hover:bg-brand-cream hover:text-brand-obsidian"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -256,11 +264,11 @@ export default function AdminLayout({
           </nav>
 
           {/* Bottom Actions */}
-          <div className="space-y-2 border-t p-4">
+          <div className="space-y-2 border-t border-brand-border p-4">
             {/* Visit Store */}
             <Link
               href="/shop"
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-600"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-muted-dark transition hover:bg-brand-cream hover:text-brand-obsidian"
             >
               <Store className="h-4 w-4" />
 
@@ -271,7 +279,7 @@ export default function AdminLayout({
             <button
               type="button"
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-muted-dark transition hover:bg-red-50 hover:text-red-600"
             >
               <LogOut className="h-4 w-4" />
 
@@ -280,11 +288,17 @@ export default function AdminLayout({
           </div>
         </aside>
 
+        {/* ================================================== */}
         {/* MAIN */}
+        {/* ================================================== */}
+
         <div className="min-w-0 flex-1">
-          {/* Mobile header */}
-          <header className="flex h-16 items-center justify-between border-b bg-white px-4 lg:hidden">
-            <Link href="/admin" className="text-lg font-bold text-slate-950">
+          {/* Mobile Header */}
+          <header className="flex h-16 items-center justify-between border-b border-brand-border bg-brand-warm-white px-4 lg:hidden">
+            <Link
+              href="/admin"
+              className="text-lg font-bold tracking-tight text-brand-obsidian"
+            >
               Store Admin
             </Link>
 
@@ -292,7 +306,7 @@ export default function AdminLayout({
               {/* Visit Store */}
               <Link
                 href="/shop"
-                className="rounded-lg p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
+                className="rounded-xl p-2 text-brand-muted transition hover:bg-brand-cream hover:text-brand-obsidian"
                 aria-label="Visit Store"
                 title="Visit Store"
               >
@@ -303,7 +317,7 @@ export default function AdminLayout({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                className="rounded-xl p-2 text-brand-muted transition hover:bg-red-50 hover:text-red-600"
                 aria-label="Logout"
                 title="Logout"
               >
@@ -312,6 +326,7 @@ export default function AdminLayout({
             </div>
           </header>
 
+          {/* Page Content */}
           <main>{children}</main>
         </div>
       </div>
