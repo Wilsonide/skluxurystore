@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Boxes,
   CreditCard,
   FolderTree,
   LayoutDashboard,
   LogOut,
+  Menu,
   ShoppingBag,
-  Tags,
   Store,
+  Tags,
+  X,
 } from "lucide-react";
 
 import { useAuthStore } from "@/app/store/auth-store";
@@ -64,23 +66,21 @@ export default function AdminLayout({
   const hydrated = useAuthStore((state) => state.hydrated);
   const logout = useAuthStore((state) => state.logout);
 
-  /**
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-* ============================================================
-* AUTHORIZATION GUARD
-* ============================================================
-  */
+  /**
+   * ============================================================
+   * AUTHORIZATION GUARD
+   * ============================================================
+   */
   useEffect(() => {
     if (!hydrated) {
       return;
     }
 
     /**
-
-
-
- * User is not authenticated.
- */
+     * User is not authenticated.
+     */
     if (!user) {
       router.replace(`/auth/login?from=${encodeURIComponent(pathname)}`);
       return;
@@ -90,7 +90,6 @@ export default function AdminLayout({
      * Check admin role.
      */
     const role = user.role?.toUpperCase();
-
     const isAdmin = ADMIN_ROLES.includes(role);
 
     /**
@@ -102,11 +101,28 @@ export default function AdminLayout({
   }, [hydrated, user, pathname, router]);
 
   /**
+   * ============================================================
+   * PREVENT BODY SCROLL WHEN MOBILE MENU IS OPEN
+   * ============================================================
+   */
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
 
-* ============================================================
-* WAITING FOR AUTH STATE
-* ============================================================
-  */
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
+  /**
+   * ============================================================
+   * WAITING FOR AUTH STATE
+   * ============================================================
+   */
   if (!hydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
@@ -128,11 +144,10 @@ export default function AdminLayout({
   }
 
   /**
-
-* ============================================================
-* NOT AUTHENTICATED
-* ============================================================
-  */
+   * ============================================================
+   * NOT AUTHENTICATED
+   * ============================================================
+   */
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
@@ -150,31 +165,29 @@ export default function AdminLayout({
   }
 
   /**
-
-* ============================================================
-* ADMIN AUTHORIZATION
-* ============================================================
-  */
+   * ============================================================
+   * ADMIN AUTHORIZATION
+   * ============================================================
+   */
   const role = user.role?.toUpperCase();
-
   const isAdmin = ADMIN_ROLES.includes(role);
 
   if (!isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-ivory px-4">
-        {" "}
         <div className="max-w-md text-center">
-          {" "}
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand-border bg-brand-cream">
-            {" "}
-            <Store className="h-6 w-6 text-brand-champagne" />{" "}
+            <Store className="h-6 w-6 text-brand-champagne" />
           </div>
+
           <h1 className="mt-6 text-xl font-semibold text-brand-obsidian">
             Access denied
           </h1>
+
           <p className="mt-2 text-sm leading-6 text-brand-muted">
             You do not have permission to access the administration area.
           </p>
+
           <Link
             href="/shop"
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-obsidian px-5 py-3 text-sm font-semibold text-brand-gold-light transition hover:bg-brand-espresso"
@@ -188,11 +201,10 @@ export default function AdminLayout({
   }
 
   /**
-
-* ============================================================
-* LOGOUT
-* ============================================================
-  */
+   * ============================================================
+   * LOGOUT
+   * ============================================================
+   */
   const handleLogout = async () => {
     try {
       await AuthService.logout();
@@ -205,16 +217,46 @@ export default function AdminLayout({
   };
 
   /**
+   * ============================================================
+   * NAVIGATION
+   * ============================================================
+   */
+  const renderNavigation = (mobile = false) => {
+    return navigation.map((item) => {
+      const Icon = item.icon;
 
-* ============================================================
-* ADMIN UI
-* ============================================================
-  */
+      const active =
+        item.href === "/admin"
+          ? pathname === "/admin"
+          : pathname.startsWith(item.href);
+
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={() => {
+            if (mobile) {
+              setMobileMenuOpen(false);
+            }
+          }}
+          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+            active
+              ? "bg-brand-obsidian text-brand-gold-light shadow-sm"
+              : "text-brand-muted-dark hover:bg-brand-cream hover:text-brand-obsidian"
+          }`}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span>{item.name}</span>
+        </Link>
+      );
+    });
+  };
+
   return (
     <div className="min-h-screen bg-brand-ivory">
       <div className="flex min-h-screen">
         {/* ================================================== */}
-        {/* SIDEBAR */}
+        {/* DESKTOP SIDEBAR */}
         {/* ================================================== */}
 
         <aside className="hidden w-64 shrink-0 border-r border-brand-border bg-brand-warm-white lg:flex lg:flex-col">
@@ -230,29 +272,7 @@ export default function AdminLayout({
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-
-              const active =
-                item.href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(item.href);
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                    active
-                      ? "bg-brand-obsidian text-brand-gold-light shadow-sm"
-                      : "text-brand-muted-dark hover:bg-brand-cream hover:text-brand-obsidian"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
+            {renderNavigation()}
           </nav>
 
           {/* Bottom Actions */}
@@ -279,24 +299,111 @@ export default function AdminLayout({
         </aside>
 
         {/* ================================================== */}
+        {/* MOBILE SIDEBAR OVERLAY */}
+        {/* ================================================== */}
+
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden" aria-hidden="true">
+            {/* Backdrop */}
+            <button
+              type="button"
+              aria-label="Close navigation"
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute inset-0 bg-brand-obsidian/40 backdrop-blur-[2px]"
+            />
+
+            {/* Drawer */}
+            <aside
+              className="relative flex h-full w-[min(86vw,320px)] flex-col border-r border-brand-border bg-brand-warm-white shadow-2xl"
+              aria-label="Admin navigation"
+            >
+              {/* Drawer Header */}
+              <div className="flex h-16 shrink-0 items-center justify-between border-b border-brand-border px-5">
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-lg font-bold tracking-tight text-brand-obsidian"
+                >
+                  Store Admin
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl p-2 text-brand-muted transition hover:bg-brand-cream hover:text-brand-obsidian"
+                  aria-label="Close navigation"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Navigation */}
+              <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+                {renderNavigation(true)}
+              </nav>
+
+              {/* Bottom Actions */}
+              <div className="shrink-0 space-y-2 border-t border-brand-border p-4">
+                {/* Visit Store */}
+                <Link
+                  href="/shop"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-muted-dark transition hover:bg-brand-cream hover:text-brand-obsidian"
+                >
+                  <Store className="h-4 w-4" />
+                  <span>Visit Store</span>
+                </Link>
+
+                {/* Logout */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-muted-dark transition hover:bg-red-50 hover:text-red-600"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* ================================================== */}
         {/* MAIN */}
         {/* ================================================== */}
 
         <div className="min-w-0 flex-1">
-          {/* Mobile Header */}
-          <header className="flex h-16 items-center justify-between border-b border-brand-border bg-brand-warm-white px-4 lg:hidden">
-            <Link
-              href="/admin"
-              className="text-lg font-bold tracking-tight text-brand-obsidian"
-            >
-              Store Admin
-            </Link>
+          {/* ================================================== */}
+          {/* MOBILE HEADER */}
+          {/* ================================================== */}
 
-            <div className="flex items-center gap-2">
+          <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-brand-border bg-brand-warm-white/95 px-4 backdrop-blur lg:hidden">
+            <div className="flex min-w-0 items-center gap-3">
+              {/* Menu Button */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-border bg-brand-cream text-brand-obsidian transition hover:border-brand-border-dark hover:bg-brand-gold-soft"
+                aria-label="Open admin navigation"
+                aria-expanded={mobileMenuOpen}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              {/* Brand */}
+              <Link
+                href="/admin"
+                className="truncate text-lg font-bold tracking-tight text-brand-obsidian"
+              >
+                Store Admin
+              </Link>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
               {/* Visit Store */}
               <Link
                 href="/shop"
-                className="rounded-xl p-2 text-brand-muted transition hover:bg-brand-cream hover:text-brand-obsidian"
+                className="rounded-xl p-2.5 text-brand-muted transition hover:bg-brand-cream hover:text-brand-obsidian"
                 aria-label="Visit Store"
                 title="Visit Store"
               >
@@ -307,7 +414,7 @@ export default function AdminLayout({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-xl p-2 text-brand-muted transition hover:bg-red-50 hover:text-red-600"
+                className="rounded-xl p-2.5 text-brand-muted transition hover:bg-red-50 hover:text-red-600"
                 aria-label="Logout"
                 title="Logout"
               >
@@ -316,7 +423,10 @@ export default function AdminLayout({
             </div>
           </header>
 
-          {/* Page Content */}
+          {/* ================================================== */}
+          {/* PAGE CONTENT */}
+          {/* ================================================== */}
+
           <main>{children}</main>
         </div>
       </div>

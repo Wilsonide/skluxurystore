@@ -33,9 +33,9 @@ export function StoreHeader() {
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   const isAdmin =
-    user?.role === "ADMIN" ||
-    user?.role === "SUPER_ADMIN" ||
-    user?.role === "STORE_ADMIN";
+    user?.role?.toUpperCase() === "ADMIN" ||
+    user?.role?.toUpperCase() === "SUPER_ADMIN" ||
+    user?.role?.toUpperCase() === "STORE_ADMIN";
 
   const userInitial = user?.name?.trim()?.charAt(0)?.toUpperCase() || "U";
 
@@ -70,41 +70,42 @@ export function StoreHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-brand-border/80 bg-brand-warm-white/95 backdrop-blur-xl">
       {/* =========================================================
-          MAIN HEADER
-      ========================================================== */}
+MAIN HEADER
+========================================================== */}
 
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="flex h-[72px] items-center gap-4 lg:h-[78px] lg:gap-8">
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8">
+        <div className="flex h-[68px] items-center gap-2 sm:h-[72px] sm:gap-4 lg:h-[78px] lg:gap-8">
           {/* =====================================================
-              LOGO
-          ====================================================== */}
+          BRAND
+      ====================================================== */}
 
           <Link
             href="/"
             onClick={closeMenus}
-            className="group flex shrink-0 items-center gap-3"
+            className="group flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3"
           >
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-brand-obsidian text-sm font-bold tracking-tight text-brand-gold-light shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md sm:h-11 sm:w-11">
+            {/* Mark */}
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-obsidian text-[11px] font-bold tracking-tight text-brand-gold-light shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md sm:h-11 sm:w-11 sm:text-sm">
               <span className="relative">SK</span>
 
-              {/* Small luxury accent */}
               <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-brand-warm-white bg-brand-champagne" />
             </div>
 
-            <div className="hidden sm:block">
-              <div className="text-[15px] font-bold tracking-[0.18em] text-brand-obsidian">
+            {/* Brand name */}
+            <div className="min-w-0">
+              <div className="truncate text-[12px] font-bold tracking-[0.14em] text-brand-obsidian sm:text-[15px] sm:tracking-[0.18em]">
                 LUXURY
               </div>
 
-              <div className="mt-[-1px] text-[10px] font-medium tracking-[0.28em] text-brand-muted">
+              <div className="-mt-0.5 truncate text-[8px] font-medium tracking-[0.24em] text-brand-muted sm:text-[10px] sm:tracking-[0.28em]">
                 STORE
               </div>
             </div>
           </Link>
 
           {/* =====================================================
-              DESKTOP NAVIGATION
-          ====================================================== */}
+          DESKTOP NAVIGATION
+      ====================================================== */}
 
           <nav className="hidden items-center gap-1 lg:flex">
             <NavLink href="/shop">Shop</NavLink>
@@ -113,8 +114,8 @@ export function StoreHeader() {
           </nav>
 
           {/* =====================================================
-              SEARCH
-          ====================================================== */}
+          SEARCH
+      ====================================================== */}
 
           <form
             onSubmit={handleSearch}
@@ -134,23 +135,23 @@ export function StoreHeader() {
           </form>
 
           {/* =====================================================
-              ACTIONS
-          ====================================================== */}
+          ACTIONS
+      ====================================================== */}
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
             {/* Mobile Search */}
 
             <Link
               href="/shop"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-brand-muted-dark transition-all duration-200 hover:bg-brand-cream hover:text-brand-obsidian md:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-brand-muted-dark transition-all duration-200 hover:bg-brand-cream hover:text-brand-obsidian sm:h-10 sm:w-10 md:hidden"
               aria-label="Search"
             >
-              <Search className="h-[19px] w-[19px]" />
+              <Search className="h-[18px] w-[18px]" />
             </Link>
 
             {/* =================================================
-                ACCOUNT
-            ================================================== */}
+            ACCOUNT
+        ================================================== */}
 
             <div className="relative">
               <button
@@ -159,10 +160,10 @@ export function StoreHeader() {
                   setAccountOpen((open) => !open);
                   setMobileOpen(false);
                 }}
-                className={`flex h-10 items-center gap-2 rounded-full border px-2.5 transition-all duration-200 ${
+                className={`flex h-9 items-center gap-1.5 rounded-full px-1.5 transition-all duration-200 sm:h-10 sm:gap-2 sm:px-2.5 ${
                   accountOpen
-                    ? "border-brand-border-dark bg-brand-cream text-brand-obsidian"
-                    : "border-transparent text-brand-muted-dark hover:border-brand-border hover:bg-brand-cream hover:text-brand-obsidian"
+                    ? "bg-brand-cream text-brand-obsidian"
+                    : "text-brand-muted-dark hover:bg-brand-cream hover:text-brand-obsidian"
                 }`}
                 aria-label={
                   user ? `Account menu for ${user.name}` : "Open account menu"
@@ -170,27 +171,19 @@ export function StoreHeader() {
                 aria-expanded={accountOpen}
               >
                 {user ? (
-                  <>
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-obsidian text-[11px] font-bold text-brand-gold-light">
-                      {userInitial}
-                    </span>
-
-                    <span className="hidden max-w-[100px] truncate text-sm font-medium text-brand-espresso md:block">
-                      {user.name}
-                    </span>
-                  </>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-obsidian text-[11px] font-bold text-brand-gold-light">
+                    {userInitial}
+                  </span>
                 ) : (
-                  <>
-                    <UserRound className="h-[19px] w-[19px]" />
-
-                    <span className="hidden text-sm font-medium md:block">
-                      Sign in
-                    </span>
-                  </>
+                  <UserRound className="h-[19px] w-[19px]" />
                 )}
 
+                <span className="hidden max-w-[100px] truncate text-sm font-medium text-brand-espresso md:block">
+                  {user ? user.name : "Sign in"}
+                </span>
+
                 <ChevronDown
-                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                  className={`hidden h-3.5 w-3.5 transition-transform duration-200 sm:block ${
                     accountOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -207,22 +200,24 @@ export function StoreHeader() {
                     onClick={() => setAccountOpen(false)}
                   />
 
-                  {/* Dropdown */}
+                  {/* =================================================
+                  RESPONSIVE ACCOUNT DROPDOWN
+              ================================================== */}
 
-                  <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[280px] overflow-hidden rounded-2xl border border-brand-border bg-white p-2 shadow-[0_20px_50px_rgba(58,42,34,0.14)]">
+                  <div className="fixed left-2 right-2 top-[calc(68px+8px)] z-50 max-h-[calc(100vh-88px)] overflow-y-auto rounded-2xl border border-brand-border bg-brand-warm-white p-2 shadow-[0_20px_50px_rgba(58,42,34,0.16)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-[320px] sm:max-h-none">
                     {user ? (
                       <>
                         {/* User information */}
 
                         <div className="mb-2 rounded-xl bg-brand-ivory p-4">
                           <div className="flex items-center gap-3">
-                            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-obsidian text-sm font-semibold text-brand-gold-light">
+                            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-obsidian text-sm font-semibold text-brand-gold-light">
                               {userInitial}
 
                               <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-brand-ivory bg-brand-champagne" />
                             </div>
 
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-semibold text-brand-obsidian">
                                 {user.name}
                               </p>
@@ -234,8 +229,6 @@ export function StoreHeader() {
                           </div>
                         </div>
 
-                        {/* Account */}
-
                         <AccountLink
                           href="/account"
                           icon={<UserRound className="h-4 w-4" />}
@@ -244,8 +237,6 @@ export function StoreHeader() {
                           My Account
                         </AccountLink>
 
-                        {/* Orders */}
-
                         <AccountLink
                           href="/account/orders"
                           icon={<Package className="h-4 w-4" />}
@@ -253,8 +244,6 @@ export function StoreHeader() {
                         >
                           My Orders
                         </AccountLink>
-
-                        {/* Admin */}
 
                         {isAdmin && (
                           <>
@@ -269,8 +258,6 @@ export function StoreHeader() {
                             </AccountLink>
                           </>
                         )}
-
-                        {/* Logout */}
 
                         <div className="my-2 border-t border-brand-border" />
 
@@ -289,7 +276,7 @@ export function StoreHeader() {
                       </>
                     ) : (
                       <>
-                        <div className="rounded-xl bg-brand-ivory px-3 py-4">
+                        <div className="rounded-xl bg-brand-ivory px-4 py-4">
                           <div className="flex items-center gap-2">
                             <Sparkles className="h-4 w-4 text-brand-champagne" />
 
@@ -326,17 +313,17 @@ export function StoreHeader() {
             </div>
 
             {/* =================================================
-                CART
-            ================================================== */}
+            CART
+        ================================================== */}
 
             <Link
               href="/cart"
-              className="group relative flex h-10 w-10 items-center justify-center rounded-full text-brand-muted-dark transition-all duration-200 hover:bg-brand-cream hover:text-brand-obsidian"
+              className="group relative flex h-9 w-9 items-center justify-center rounded-full text-brand-muted-dark transition-all duration-200 hover:bg-brand-cream hover:text-brand-obsidian sm:h-10 sm:w-10"
               aria-label={`Shopping cart${
                 itemCount > 0 ? `, ${itemCount} items` : ""
               }`}
             >
-              <ShoppingBag className="h-[19px] w-[19px] transition-transform duration-200 group-hover:-translate-y-0.5" />
+              <ShoppingBag className="h-[18px] w-[18px] transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-[19px] sm:w-[19px]" />
 
               {itemCount > 0 && (
                 <span className="absolute right-0 top-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-brand-warm-white bg-brand-obsidian px-1 text-[9px] font-bold leading-none text-brand-gold-light">
@@ -346,8 +333,8 @@ export function StoreHeader() {
             </Link>
 
             {/* =================================================
-                MOBILE MENU BUTTON
-            ================================================== */}
+            MOBILE MENU
+        ================================================== */}
 
             <button
               type="button"
@@ -355,7 +342,7 @@ export function StoreHeader() {
                 setMobileOpen((open) => !open);
                 setAccountOpen(false);
               }}
-              className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 lg:hidden ${
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 sm:h-10 sm:w-10 lg:hidden ${
                 mobileOpen
                   ? "bg-brand-obsidian text-brand-gold-light"
                   : "text-brand-muted-dark hover:bg-brand-cream hover:text-brand-obsidian"
@@ -372,11 +359,9 @@ export function StoreHeader() {
           </div>
         </div>
       </div>
-
       {/* =========================================================
-          MOBILE MENU
-      ========================================================== */}
-
+      MOBILE MENU
+  ========================================================== */}
       {mobileOpen && (
         <div className="border-t border-brand-border bg-brand-warm-white lg:hidden">
           <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6">
@@ -480,7 +465,7 @@ export function StoreHeader() {
 }
 
 /* ================================================================
-   DESKTOP NAV LINK
+DESKTOP NAV LINK
 ================================================================ */
 
 function NavLink({
@@ -503,7 +488,7 @@ function NavLink({
 }
 
 /* ================================================================
-   ACCOUNT LINK
+ACCOUNT LINK
 ================================================================ */
 
 function AccountLink({
@@ -523,19 +508,18 @@ function AccountLink({
       onClick={onClick}
       className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-brand-espresso transition hover:bg-brand-ivory hover:text-brand-obsidian"
     >
+      {" "}
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-cream text-brand-muted-dark transition group-hover:bg-brand-gold-light/40 group-hover:text-brand-espresso">
-        {icon}
+        {icon}{" "}
       </span>
-
       <span className="flex-1">{children}</span>
-
       <ArrowRight className="h-3.5 w-3.5 text-brand-muted opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
     </Link>
   );
 }
 
 /* ================================================================
-   MOBILE NAV LINK
+MOBILE NAV LINK
 ================================================================ */
 
 function MobileNavLink({
@@ -553,8 +537,8 @@ function MobileNavLink({
       onClick={onClick}
       className="group flex items-center justify-between rounded-xl px-3 py-3.5 text-sm font-medium text-brand-espresso transition hover:bg-brand-cream hover:text-brand-obsidian"
     >
+      {" "}
       <span>{children}</span>
-
       <ArrowRight className="h-4 w-4 text-brand-muted transition group-hover:translate-x-0.5 group-hover:text-brand-champagne" />
     </Link>
   );

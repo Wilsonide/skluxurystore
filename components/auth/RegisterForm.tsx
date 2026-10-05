@@ -1,31 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
 import { CardWrapper } from "./card-wrapper";
 import { registerSchema } from "@/schemas";
-
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
-
 import { AuthService } from "@/app/services/auth.service";
 
 export const RegisterForm = () => {
-  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
-
     defaultValues: {
       name: "",
       email: "",
@@ -49,8 +48,14 @@ export const RegisterForm = () => {
 
         setSuccess(
           response?.message ??
-            "Account created successfully! Please check your email to verify your account.",
+            "Account created successfully! Redirecting to login...",
         );
+
+        // Give the user a moment to see the success message,
+        // then redirect to the login page.
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 1200);
       } catch (err: any) {
         setError(
           err?.response?.data?.detail ??
@@ -173,7 +178,6 @@ export const RegisterForm = () => {
         </div>
 
         <FormError message={error} />
-
         <FormSuccess message={success} />
 
         <Button

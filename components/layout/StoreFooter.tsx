@@ -52,7 +52,7 @@ export function StoreFooter() {
               <FooterLink href="/shop">All Products</FooterLink>
               <FooterLink href="/categories">Categories</FooterLink>
               <FooterLink href="/brands">Brands</FooterLink>
-              <FooterLink href="/orders">My Orders</FooterLink>
+              <FooterLink href="/account/orders">My Orders</FooterLink>
             </div>
           </div>
 
