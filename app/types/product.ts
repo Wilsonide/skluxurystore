@@ -26,6 +26,7 @@ export interface ProductVariantUpdate {
 }
 
 export interface ProductVariant {
+  [x: string]: any;
   sku: string;
   id: number;
   product_id: number;
