@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ProductVariantCreate {
   price: number;
   quantity?: number;
@@ -25,6 +26,7 @@ export interface ProductVariantUpdate {
 }
 
 export interface ProductVariant {
+  sku: string;
   id: number;
   product_id: number;
 
@@ -121,6 +123,7 @@ export interface ProductUpdate {
 // ============================================================
 
 export interface Product {
+  [x: string]: any;
   id: number;
 
   name: string;
