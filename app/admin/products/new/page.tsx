@@ -1,10 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 
 import {
   ArrowLeft,
@@ -15,6 +20,7 @@ import {
   Trash2,
   Upload,
   X,
+  Star,
 } from "lucide-react";
 
 import { ProductService } from "@/app/services/product.service";
@@ -23,8 +29,9 @@ import { useBrands } from "@/app/hooks/use-brands";
 
 import type {
   ProductCreate,
+  ProductImageCreate,
   ProductVariantCreate,
-} from "@/app/services/product.service";
+} from "@/app/types/product";
 
 /* ================================================================
    CLOUDINARY CONFIGURATION
@@ -35,6 +42,9 @@ const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET =
   process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_PRODUCT_IMAGES = 10;
+
 /* ================================================================
    TYPES
 ================================================================ */
@@ -43,27 +53,46 @@ interface VariantForm extends ProductVariantCreate {
   localId: string;
 }
 
+interface GalleryImage {
+  localId: string;
+  image_url: string;
+  public_id: string;
+  sort_order: number;
+  is_cover: boolean;
+}
+
 interface CloudinaryUploadResponse {
   secure_url: string;
   public_id: string;
 }
 
 /* ================================================================
-   CREATE VARIANT
+   HELPERS
 ================================================================ */
 
 function createVariant(): VariantForm {
   return {
     localId: crypto.randomUUID(),
-
     price: 0,
     quantity: 0,
-
     color: "",
     size: "",
-    material: "",
+    is_default: true,
+    is_available: true,
+  };
+}
 
-    is_default: false,
+function createGalleryImage(
+  image: CloudinaryUploadResponse,
+  sortOrder: number,
+  isCover: boolean,
+): GalleryImage {
+  return {
+    localId: crypto.randomUUID(),
+    image_url: image.secure_url,
+    public_id: image.public_id,
+    sort_order: sortOrder,
+    is_cover: isCover,
   };
 }
 
@@ -77,7 +106,6 @@ export default function NewProductPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { categories, loading: categoriesLoading } = useCategories();
-
   const { brands, loading: brandsLoading } = useBrands();
 
   /* ================================================================
@@ -85,21 +113,20 @@ export default function NewProductPage() {
   ================================================================= */
 
   const [name, setName] = useState("");
-
   const [description, setDescription] = useState("");
 
   const [categoryId, setCategoryId] = useState("");
-
   const [brandId, setBrandId] = useState("");
 
+  const [material, setMaterial] = useState("");
+  const [gender, setGender] = useState("");
+  const [warranty, setWarranty] = useState("");
+
   /* ================================================================
-     CLOUDINARY IMAGE
+     PRODUCT GALLERY
   ================================================================= */
 
-  const [coverImage, setCoverImage] = useState("");
-
-  const [coverPublicId, setCoverPublicId] = useState("");
-
+  const [images, setImages] = useState<GalleryImage[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
   /* ================================================================
@@ -107,7 +134,6 @@ export default function NewProductPage() {
   ================================================================= */
 
   const [isAvailable, setIsAvailable] = useState(true);
-
   const [isFeatured, setIsFeatured] = useState(false);
 
   /* ================================================================
@@ -121,14 +147,15 @@ export default function NewProductPage() {
   ================================================================= */
 
   const [saving, setSaving] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
 
   /* ================================================================
      CLOUDINARY UPLOAD
   ================================================================= */
 
-  const uploadImageToCloudinary = async (file: File) => {
+  const uploadImageToCloudinary = async (
+    file: File,
+  ): Promise<CloudinaryUploadResponse> => {
     if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
       throw new Error(
         "Cloudinary configuration is missing. Check your environment variables.",
@@ -136,21 +163,17 @@ export default function NewProductPage() {
     }
 
     if (!file.type.startsWith("image/")) {
-      throw new Error("Please select a valid image file.");
+      throw new Error(`"${file.name}" is not a valid image.`);
     }
 
-    const maxFileSize = 5 * 1024 * 1024;
-
-    if (file.size > maxFileSize) {
-      throw new Error("Image size must not exceed 5MB.");
+    if (file.size > MAX_IMAGE_SIZE) {
+      throw new Error(`"${file.name}" exceeds the 5MB image limit.`);
     }
 
     const formData = new FormData();
 
     formData.append("file", file);
-
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
     formData.append("folder", "store/products");
 
     const response = await fetch(
@@ -162,78 +185,146 @@ export default function NewProductPage() {
     );
 
     if (!response.ok) {
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       throw new Error(
-        data?.error?.message ?? "Failed to upload image to Cloudinary.",
+        data?.error?.message ??
+          `Failed to upload "${file.name}" to Cloudinary.`,
       );
     }
 
-    const data: CloudinaryUploadResponse = await response.json();
-
-    return data;
+    return (await response.json()) as CloudinaryUploadResponse;
   };
 
   /* ================================================================
-     HANDLE IMAGE SELECTION
+     HANDLE MULTIPLE IMAGE SELECTION
   ================================================================= */
 
-  const handleImageChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
 
-    if (!file) {
+    if (!files.length) return;
+
+    // Reset the input so the same file can be selected again.
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    const remainingSlots = MAX_PRODUCT_IMAGES - images.length;
+
+    if (remainingSlots <= 0) {
+      setError("A product can have a maximum of 10 images.");
+      return;
+    }
+
+    if (files.length > remainingSlots) {
+      setError(
+        `You can add only ${remainingSlots} more image(s). The maximum is 10 images per product.`,
+      );
       return;
     }
 
     try {
       setError(null);
-
       setUploadingImage(true);
 
-      const uploadedImage = await uploadImageToCloudinary(file);
+      const uploadedImages: CloudinaryUploadResponse[] = [];
 
-      setCoverImage(uploadedImage.secure_url);
+      for (const file of files) {
+        const uploaded = await uploadImageToCloudinary(file);
+        uploadedImages.push(uploaded);
+      }
 
-      setCoverPublicId(uploadedImage.public_id);
-    } catch (error: any) {
-      setError(error?.message ?? "Failed to upload product image.");
+      setImages((current) => {
+        const nextImages = [...current];
+
+        uploadedImages.forEach((uploaded, index) => {
+          const isFirstImage = nextImages.length === 0 && index === 0;
+
+          nextImages.push(
+            createGalleryImage(uploaded, nextImages.length, isFirstImage),
+          );
+        });
+
+        return nextImages.map((image, index) => ({
+          ...image,
+          sort_order: index,
+        }));
+      });
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to upload product images.",
+      );
     } finally {
       setUploadingImage(false);
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     }
+  };
+
+  /* ================================================================
+     SET COVER IMAGE
+  ================================================================= */
+
+  const setCoverImage = (localId: string) => {
+    setImages((current) =>
+      current.map((image) => ({
+        ...image,
+        is_cover: image.localId === localId,
+      })),
+    );
   };
 
   /* ================================================================
      REMOVE IMAGE
   ================================================================= */
 
-  const removeImage = () => {
-    setCoverImage("");
+  const removeImage = (localId: string) => {
+    setImages((current) => {
+      const remaining = current.filter((image) => image.localId !== localId);
 
-    setCoverPublicId("");
+      // Keep one cover image whenever the gallery is not empty.
+      const hasCover = remaining.some((image) => image.is_cover);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+      return remaining.map((image, index) => ({
+        ...image,
+        sort_order: index,
+        is_cover: image.is_cover || (!hasCover && index === 0),
+      }));
+    });
   };
 
   /* ================================================================
-     VARIANTS
+     VARIANT MANAGEMENT
   ================================================================= */
 
   const addVariant = () => {
-    setVariants((current) => [...current, createVariant()]);
+    setVariants((current) => [
+      ...current,
+      {
+        ...createVariant(),
+        is_default: false,
+      },
+    ]);
   };
 
   const removeVariant = (localId: string) => {
-    setVariants((current) =>
-      current.filter((variant) => variant.localId !== localId),
-    );
+    setVariants((current) => {
+      const remaining = current.filter(
+        (variant) => variant.localId !== localId,
+      );
+
+      // Ensure a remaining variant is selected as default.
+      if (
+        remaining.length > 0 &&
+        !remaining.some((variant) => variant.is_default)
+      ) {
+        remaining[0] = {
+          ...remaining[0],
+          is_default: true,
+        };
+      }
+
+      return remaining;
+    });
   };
 
   const updateVariant = (
@@ -243,12 +334,7 @@ export default function NewProductPage() {
   ) => {
     setVariants((current) =>
       current.map((variant) =>
-        variant.localId === localId
-          ? {
-              ...variant,
-              [field]: value,
-            }
-          : variant,
+        variant.localId === localId ? { ...variant, [field]: value } : variant,
       ),
     );
   };
@@ -269,78 +355,120 @@ export default function NewProductPage() {
   const hasValidVariants =
     variants.length > 0 &&
     variants.every(
-      (variant) => Number(variant.price) > 0 && Number(variant.quantity) >= 0,
+      (variant) =>
+        Number.isFinite(Number(variant.price)) &&
+        Number(variant.price) >= 0 &&
+        Number.isInteger(Number(variant.quantity)) &&
+        Number(variant.quantity) >= 0,
     );
 
+  const hasValidProductDetails =
+    name.trim().length >= 2 &&
+    name.trim().length <= 255 &&
+    description.trim().length >= 1 &&
+    categoryId !== "" &&
+    (!brandId || Number.isInteger(Number(brandId))) &&
+    material.length <= 100 &&
+    gender.length <= 50 &&
+    warranty.length <= 255;
+
+  const hasValidGallery =
+    images.length <= MAX_PRODUCT_IMAGES &&
+    (images.length === 0 ||
+      images.filter((image) => image.is_cover).length === 1);
+
   const isFormValid =
-    name.trim().length > 0 &&
-    description.trim().length > 0 &&
-    categoryId.length > 0 &&
-    coverImage.length > 0 &&
-    !uploadingImage &&
-    hasValidVariants;
+    hasValidProductDetails &&
+    hasValidVariants &&
+    hasValidGallery &&
+    !uploadingImage;
 
   /* ================================================================
      SUBMIT
   ================================================================= */
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     setError(null);
+
+    if (uploadingImage) {
+      setError("Please wait for image uploads to finish.");
+      return;
+    }
 
     if (!isFormValid) {
       setError(
-        "Please complete all required fields before creating the product.",
+        "Check the required fields, product details, image gallery, and variant values.",
       );
-
       return;
     }
 
     try {
       setSaving(true);
 
+      const cover = images.find((image) => image.is_cover);
+
+      const productImages: ProductImageCreate[] = images.map(
+        (image, index) => ({
+          image_url: image.image_url,
+          public_id: image.public_id || null,
+          sort_order: index,
+          is_cover: image.is_cover,
+        }),
+      );
+
       const payload: ProductCreate = {
         name: name.trim(),
-
         description: description.trim(),
 
         category_id: Number(categoryId),
-
         brand_id: brandId ? Number(brandId) : null,
 
-        cover_image: coverImage || null,
+        material: material.trim() || null,
+        gender: gender.trim() || null,
+        warranty: warranty.trim() || null,
 
-        cover_public_id: coverPublicId || null,
+        cover_image: cover?.image_url ?? null,
+        cover_public_id: cover?.public_id ?? null,
 
         is_available: isAvailable,
-
         is_featured: isFeatured,
 
         variants: variants.map((variant) => ({
           price: Number(variant.price),
-
           quantity: Number(variant.quantity),
 
           color: variant.color?.trim() || null,
-
           size: variant.size?.trim() || null,
 
-          material: variant.material?.trim() || null,
-
           is_default: variant.is_default ?? false,
+          is_available: variant.is_available ?? true,
         })),
+
+        images: productImages,
       };
 
       await ProductService.create(payload);
 
-      router.push(`/admin/products`);
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.detail ??
-          error?.message ??
-          "Failed to create product.",
-      );
+      router.push("/admin/products");
+      router.refresh();
+    } catch (err: unknown) {
+      const apiError = err as {
+        response?: {
+          data?: {
+            detail?: string | { msg?: string }[];
+          };
+        };
+        message?: string;
+      };
+
+      const detail = apiError.response?.data?.detail;
+
+      const errorMessage = Array.isArray(detail)
+        ? detail.map((item) => item.msg ?? "Validation error").join(", ")
+        : detail;
+
+      setError(errorMessage || apiError.message || "Failed to create product.");
     } finally {
       setSaving(false);
     }
@@ -375,7 +503,7 @@ export default function NewProductPage() {
               </h1>
 
               <p className="text-sm text-slate-500">
-                Create a product and configure its variants.
+                Create a product, upload its gallery, and configure variants.
               </p>
             </div>
           </div>
@@ -384,8 +512,20 @@ export default function NewProductPage() {
         {/* ERROR */}
 
         {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+          <div
+            role="alert"
+            className="mb-6 flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            <p>{error}</p>
+
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="shrink-0 rounded p-1 hover:bg-red-100"
+              aria-label="Dismiss error"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
 
@@ -393,19 +533,17 @@ export default function NewProductPage() {
           {/* BASIC INFORMATION */}
 
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6">
-              <h2 className="font-semibold text-slate-950">
-                Basic Information
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                General information about this product.
-              </p>
-            </div>
+            <SectionHeading
+              title="Basic Information"
+              description="General information about this product."
+            />
 
             <div className="grid gap-5">
               <Field label="Product Name" required>
                 <input
+                  required
+                  minLength={2}
+                  maxLength={255}
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="e.g. Classic Leather Watch"
@@ -415,6 +553,7 @@ export default function NewProductPage() {
 
               <Field label="Description" required>
                 <textarea
+                  required
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   rows={5}
@@ -426,6 +565,7 @@ export default function NewProductPage() {
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Category" required>
                   <select
+                    required
                     value={categoryId}
                     onChange={(event) => setCategoryId(event.target.value)}
                     disabled={categoriesLoading}
@@ -464,94 +604,146 @@ export default function NewProductPage() {
                   </select>
                 </Field>
               </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Product Material">
+                  <input
+                    maxLength={100}
+                    value={material}
+                    onChange={(event) => setMaterial(event.target.value)}
+                    placeholder="e.g. Genuine leather"
+                    className={inputClass}
+                  />
+                </Field>
+
+                <Field label="Gender">
+                  <select
+                    value={gender}
+                    onChange={(event) => setGender(event.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">Not specified</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Unisex">Unisex</option>
+                    <option value="Kids">Kids</option>
+                  </select>
+                </Field>
+              </div>
+
+              <Field label="Warranty">
+                <input
+                  maxLength={255}
+                  value={warranty}
+                  onChange={(event) => setWarranty(event.target.value)}
+                  placeholder="e.g. 12 months warranty"
+                  className={inputClass}
+                />
+              </Field>
             </div>
           </section>
 
-          {/* PRODUCT IMAGE */}
+          {/* PRODUCT GALLERY */}
 
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6">
-              <h2 className="font-semibold text-slate-950">
-                Product Image
-                <span className="ml-1 text-red-500">*</span>
-              </h2>
+            <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+              <SectionHeading
+                title="Product Gallery"
+                description="Upload up to 10 images. Choose one cover image for product listings."
+              />
 
-              <p className="mt-1 text-sm text-slate-500">
-                Upload the main image customers will see.
-              </p>
+              <span className="inline-flex w-fit items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                {images.length}/{MAX_PRODUCT_IMAGES} images
+              </span>
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/jpg,image/webp"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
               onChange={handleImageChange}
               className="hidden"
             />
 
-            {coverImage ? (
-              <div className="relative overflow-hidden rounded-xl border border-slate-200">
-                <div className="relative aspect-[16/9] w-full bg-slate-100 sm:aspect-[2/1]">
-                  <Image
-                    src={coverImage}
-                    alt="Product preview"
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 100vw, 800px"
-                  />
-                </div>
+            {images.length > 0 && (
+              <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {images.map((image, index) => (
+                  <div
+                    key={image.localId}
+                    className={`overflow-hidden rounded-xl border bg-white ${
+                      image.is_cover
+                        ? "border-blue-500 ring-2 ring-blue-100"
+                        : "border-slate-200"
+                    }`}
+                  >
+                    <div className="relative aspect-square bg-slate-100">
+                      <Image
+                        src={image.image_url}
+                        alt={`Product image ${index + 1}`}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      />
 
-                <div className="flex items-center justify-between gap-4 border-t bg-white p-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900">
-                      Product image uploaded
-                    </p>
+                      {image.is_cover && (
+                        <span className="absolute left-2 top-2 rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white">
+                          COVER
+                        </span>
+                      )}
 
-                    <p className="mt-1 truncate text-xs text-slate-500">
-                      {coverPublicId}
-                    </p>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(image.localId)}
+                        disabled={uploadingImage || saving}
+                        aria-label={`Remove image ${index + 1}`}
+                        className="absolute right-2 top-2 rounded-full bg-white/95 p-1.5 text-red-600 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 p-3">
+                      <p className="truncate text-xs text-slate-500">
+                        Image {index + 1}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => setCoverImage(image.localId)}
+                        disabled={image.is_cover || uploadingImage || saving}
+                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-default disabled:opacity-60"
+                      >
+                        <Star
+                          className={`h-3.5 w-3.5 ${
+                            image.is_cover ? "fill-current" : ""
+                          }`}
+                        />
+                        {image.is_cover ? "Cover image" : "Set as cover"}
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingImage}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      <Upload className="h-4 w-4" />
-                      Replace
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      disabled={uploadingImage}
-                      className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                      title="Remove image"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {images.length < MAX_PRODUCT_IMAGES && (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImage}
-                className="flex min-h-56 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center transition hover:border-slate-400 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={uploadingImage || saving}
+                className="flex min-h-44 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center transition hover:border-slate-400 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {uploadingImage ? (
                   <>
                     <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
 
                     <p className="mt-4 text-sm font-medium text-slate-700">
-                      Uploading image...
+                      Uploading images...
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      Please wait while your image is uploaded.
+                      Please wait for the uploads to finish.
                     </p>
                   </>
                 ) : (
@@ -561,33 +753,44 @@ export default function NewProductPage() {
                     </div>
 
                     <p className="mt-4 text-sm font-semibold text-slate-800">
-                      Upload product image
+                      Add product images
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      PNG, JPG, JPEG or WEBP up to 5MB
+                      PNG, JPG or WEBP · Maximum 5MB per image
                     </p>
 
-                    <span className="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">
+                    <span className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">
                       <Upload className="h-4 w-4" />
-                      Choose Image
+                      Choose Images
                     </span>
                   </>
                 )}
               </button>
+            )}
+
+            {images.length === 0 && (
+              <p className="mt-3 text-xs text-slate-500">
+                You can create a product without gallery images. If you add
+                images, select one as the cover.
+              </p>
+            )}
+
+            {images.length > 0 && (
+              <p className="mt-4 text-xs text-slate-500">
+                The cover image is also saved to the product&apos;s cover_image
+                and cover_public_id fields.
+              </p>
             )}
           </section>
 
           {/* VISIBILITY */}
 
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5">
-              <h2 className="font-semibold text-slate-950">Visibility</h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Control how this product appears in your store.
-              </p>
-            </div>
+            <SectionHeading
+              title="Visibility"
+              description="Control how this product appears in your store."
+            />
 
             <div className="space-y-4">
               <Checkbox
@@ -609,21 +812,17 @@ export default function NewProductPage() {
           {/* VARIANTS */}
 
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="font-semibold text-slate-950">
-                  Product Variants
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Add different prices, quantities, colors, sizes, or materials.
-                </p>
-              </div>
+            <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+              <SectionHeading
+                title="Product Variants"
+                description="Configure prices, stock quantities, colors, and sizes."
+              />
 
               <button
                 type="button"
                 onClick={addVariant}
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                disabled={saving}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />
                 Add Variant
@@ -636,8 +835,6 @@ export default function NewProductPage() {
                   key={variant.localId}
                   className="rounded-xl border border-slate-200 bg-slate-50 p-5"
                 >
-                  {/* VARIANT HEADER */}
-
                   <div className="mb-5 flex items-center justify-between">
                     <div>
                       <p className="font-medium text-slate-900">
@@ -655,15 +852,14 @@ export default function NewProductPage() {
                       <button
                         type="button"
                         onClick={() => removeVariant(variant.localId)}
-                        className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                        title="Remove variant"
+                        disabled={saving}
+                        aria-label={`Remove variant ${index + 1}`}
+                        className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     )}
                   </div>
-
-                  {/* VARIANT FIELDS */}
 
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <Field label="Price" required>
@@ -671,12 +867,15 @@ export default function NewProductPage() {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={variant.price || ""}
+                        required
+                        value={variant.price}
                         onChange={(event) =>
                           updateVariant(
                             variant.localId,
                             "price",
-                            Number(event.target.value),
+                            event.target.value === ""
+                              ? 0
+                              : Number(event.target.value),
                           )
                         }
                         placeholder="0.00"
@@ -688,12 +887,16 @@ export default function NewProductPage() {
                       <input
                         type="number"
                         min="0"
+                        step="1"
+                        required
                         value={variant.quantity}
                         onChange={(event) =>
                           updateVariant(
                             variant.localId,
                             "quantity",
-                            Number(event.target.value),
+                            event.target.value === ""
+                              ? 0
+                              : Number(event.target.value),
                           )
                         }
                         placeholder="0"
@@ -703,6 +906,7 @@ export default function NewProductPage() {
 
                     <Field label="Color">
                       <input
+                        maxLength={100}
                         value={variant.color ?? ""}
                         onChange={(event) =>
                           updateVariant(
@@ -711,13 +915,14 @@ export default function NewProductPage() {
                             event.target.value,
                           )
                         }
-                        placeholder="Gold"
+                        placeholder="e.g. Gold"
                         className={inputClass}
                       />
                     </Field>
 
                     <Field label="Size">
                       <input
+                        maxLength={100}
                         value={variant.size ?? ""}
                         onChange={(event) =>
                           updateVariant(
@@ -726,35 +931,29 @@ export default function NewProductPage() {
                             event.target.value,
                           )
                         }
-                        placeholder="Large"
-                        className={inputClass}
-                      />
-                    </Field>
-
-                    <Field label="Material">
-                      <input
-                        value={variant.material ?? ""}
-                        onChange={(event) =>
-                          updateVariant(
-                            variant.localId,
-                            "material",
-                            event.target.value,
-                          )
-                        }
-                        placeholder="Stainless Steel"
+                        placeholder="e.g. Large"
                         className={inputClass}
                       />
                     </Field>
                   </div>
-
-                  {/* DEFAULT VARIANT */}
 
                   <div className="mt-5">
                     <Checkbox
                       checked={variant.is_default ?? false}
                       onChange={() => setDefaultVariant(variant.localId)}
                       label="Default variant"
-                      description="Use this variant when customers first view the product."
+                      description="Use this variant as the default selection."
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <Checkbox
+                      checked={variant.is_available ?? true}
+                      onChange={(checked) =>
+                        updateVariant(variant.localId, "is_available", checked)
+                      }
+                      label="Variant is available"
+                      description="Allow this variant to be selected."
                     />
                   </div>
                 </div>
@@ -772,26 +971,48 @@ export default function NewProductPage() {
               Cancel
             </Link>
 
-            {isFormValid && (
-              <button
-                type="submit"
-                disabled={saving || uploadingImage}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating Product...
-                  </>
-                ) : (
-                  "Create Product"
-                )}
-              </button>
-            )}
+            <button
+              type="submit"
+              disabled={saving || uploadingImage}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating Product...
+                </>
+              ) : uploadingImage ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading Images...
+                </>
+              ) : (
+                "Create Product"
+              )}
+            </button>
           </div>
         </form>
       </div>
     </main>
+  );
+}
+
+/* ================================================================
+   SECTION HEADING
+================================================================ */
+
+function SectionHeading({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mb-6">
+      <h2 className="font-semibold text-slate-950">{title}</h2>
+      <p className="mt-1 text-sm text-slate-500">{description}</p>
+    </div>
   );
 }
 
@@ -806,13 +1027,12 @@ function Field({
 }: {
   label: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-slate-800">
         {label}
-
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
 

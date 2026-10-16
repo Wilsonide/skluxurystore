@@ -3,74 +3,11 @@ import { Axios } from "@/lib/axios";
 import type {
   PaginatedProducts,
   Product,
+  ProductCreate,
   ProductListItem,
   ProductQueryParams,
+  ProductUpdate,
 } from "@/app/types/product";
-
-// ============================================================
-// VARIANT TYPES
-// ============================================================
-
-export interface ProductVariantCreate {
-  sku?: string;
-  price: number;
-  quantity: number;
-
-  color?: string | null;
-  size?: string | null;
-  material?: string | null;
-  style?: string | null;
-  strap_type?: string | null;
-
-  is_default?: boolean;
-  is_available?: boolean;
-}
-
-// ============================================================
-// PRODUCT CREATE
-// ============================================================
-
-export interface ProductCreate {
-  name: string;
-  description: string;
-
-  category_id: number;
-  brand_id?: number | null;
-
-  material?: string | null;
-  gender?: string | null;
-  warranty?: string | null;
-
-  cover_image?: string | null;
-  cover_public_id?: string | null;
-
-  is_available?: boolean;
-  is_featured?: boolean;
-
-  variants: ProductVariantCreate[];
-}
-
-// ============================================================
-// PRODUCT UPDATE
-// ============================================================
-
-export interface ProductUpdate {
-  name?: string;
-  description?: string;
-
-  category_id?: number;
-  brand_id?: number | null;
-
-  material?: string | null;
-  gender?: string | null;
-  warranty?: string | null;
-
-  cover_image?: string | null;
-  cover_public_id?: string | null;
-
-  is_available?: boolean;
-  is_featured?: boolean;
-}
 
 // ============================================================
 // PRODUCT SERVICE
@@ -78,7 +15,7 @@ export interface ProductUpdate {
 
 export const ProductService = {
   // ----------------------------------------------------------
-  // CREATE
+  // CREATE PRODUCT
   // ----------------------------------------------------------
 
   async create(data: ProductCreate): Promise<Product> {
@@ -88,7 +25,7 @@ export const ProductService = {
   },
 
   // ----------------------------------------------------------
-  // GET PRODUCTS
+  // GET ALL PRODUCTS
   // ----------------------------------------------------------
 
   async getAll(params?: ProductQueryParams): Promise<PaginatedProducts> {
@@ -100,7 +37,7 @@ export const ProductService = {
   },
 
   // ----------------------------------------------------------
-  // SEARCH
+  // SEARCH PRODUCTS
   // ----------------------------------------------------------
 
   async search(query: string): Promise<ProductListItem[]> {
@@ -114,7 +51,7 @@ export const ProductService = {
   },
 
   // ----------------------------------------------------------
-  // GET SINGLE
+  // GET PRODUCT BY ID
   // ----------------------------------------------------------
 
   async getById(productId: number): Promise<Product> {
@@ -124,7 +61,7 @@ export const ProductService = {
   },
 
   // ----------------------------------------------------------
-  // UPDATE
+  // UPDATE PRODUCT
   // ----------------------------------------------------------
 
   async update(productId: number, data: ProductUpdate): Promise<Product> {
@@ -134,7 +71,7 @@ export const ProductService = {
   },
 
   // ----------------------------------------------------------
-  // DELETE
+  // DELETE PRODUCT
   // ----------------------------------------------------------
 
   async delete(productId: number): Promise<void> {
